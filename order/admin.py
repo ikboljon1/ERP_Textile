@@ -15,6 +15,7 @@ class OrderAdmin(admin.ModelAdmin):
         'status',
         'priority',
         'sales_channel',
+        'total_cost',
     )
     list_filter = (
         'status',

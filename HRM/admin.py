@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
-from .models import Role, Permission, Branch, Employee, Brigade
+from .models import Role, Permission, Branch, Employee
 # from .utils import calculate_payroll, has_permission
 from datetime import date
 from django.contrib.contenttypes.models import ContentType
@@ -23,7 +23,6 @@ class PermissionInline(admin.TabularInline):
 class RoleAdmin(admin.ModelAdmin):
     inlines = [PermissionInline]
 
-admin.site.register(Brigade)
 
 # Регистрируем остальные модели
 admin.site.register(Branch)

@@ -31,17 +31,9 @@ class Role(models.Model):
         verbose_name = "Роль"
         verbose_name_plural = "Роли"
 
-class Brigade(models.Model):
-    """ Модель бригады """
-    name = models.CharField("Название бригады", max_length=255, unique=True)
-    # Добавьте другие поля, если необходимо (например, описание, руководитель)
-
-    def __str__(self):
-        return self.name
 
 class Employee(AbstractUser):
     """ Сотрудник """
-    brigades = models.ManyToManyField('Brigade', verbose_name="Бригады", blank=True)
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Филиал")
     position = models.CharField("Должность", max_length=100)
     hire_date = models.DateField("Дата приема на работу", null=True, blank=True)

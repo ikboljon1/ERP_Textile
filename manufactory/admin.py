@@ -10,10 +10,10 @@ from django.db.models import Sum
 @admin.register(Assignment)
 class AssignmentAdmin(admin.ModelAdmin):
     list_display = (
-        'id', 'order_item_link', 'operation', 'stage', 'quantity', 'completed_quantity', 'status', 'brigade_link',
+        'id', 'order_item_link', 'operation', 'stage', 'quantity', 'completed_quantity', 'status', 'user',
         'start_date', 'end_date'
     )
-    list_filter = ('status', 'stage', 'brigade', 'operation')
+    list_filter = ('status', 'stage', 'user', 'operation')
     search_fields = ('order_item__order__id', 'operation__name')
     readonly_fields = ('completed_quantity',)
 
@@ -22,15 +22,6 @@ class AssignmentAdmin(admin.ModelAdmin):
         return format_html('<a href="{}">{}</a>', link, obj.order_item)
 
     order_item_link.short_description = "Позиция заказа"
-
-    def brigade_link(self, obj):
-        if obj.brigade:
-            link = reverse("admin:HRM_brigade_change", args=[obj.brigade.id])
-            return format_html('<a href="{}">{}</a>', link, obj.brigade)
-        return "-"
-
-    brigade_link.short_description = "Бригада"
-
 
 @admin.register(MaterialRequest)
 class MaterialRequestAdmin(admin.ModelAdmin):

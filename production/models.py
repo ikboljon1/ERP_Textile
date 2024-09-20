@@ -1,7 +1,7 @@
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.core.exceptions import ValidationError
-from django.db.models.signals import post_save, post_delete
+from django.db.models.signals import post_save, post_delete, pre_delete
 from django.dispatch import receiver
 
 from wms.models import Product, Stock, Warehouse
@@ -21,20 +21,31 @@ class ProductionItem(models.Model):
 
     def calculate_cost_price(self):
         """
-        Рассчитывает себестоимость ProductionItem на основе
-        продажной цены материалов и ставок за операции.
+        Рассчитывает себестоимость ОДНОГО ProductionItem на основе
+        данных TechnologicalMap.
         """
-        if self.technological_map:
-            total_material_cost = self.technological_map.materials.aggregate(
-                total_cost=Sum(F('product__selling_price') * F('quantity'))
-            )['total_cost'] or 0
+        self.cost_price = 0
 
-            total_labor_cost = 0
-            for operation in self.technological_map.operation.all():
-                total_labor_cost += operation.piece_rate * operation.details_quantity_per_product
+        if hasattr(self, 'technological_map'):
+            tech_map = self.technological_map
 
-            self.cost_price = total_material_cost + total_labor_cost
-            self.save()
+            # Расчет стоимости материалов для одного изделия
+            for material in tech_map.materials.all():
+                try:
+                    self.cost_price += material.product.selling_price * material.quantity
+                except TypeError:
+                    pass
+
+            # Расчет стоимости операций для одного изделия
+            for operation in tech_map.operation.all():
+                self.cost_price += operation.piece_rate * operation.details_quantity_per_product
+
+            def save(self, *args, **kwargs):
+                self.calculate_cost_price()  # Вызываем calculate_cost_price перед сохранением
+                super().save(*args, **kwargs)
+
+        self.save(update_fields=['cost_price'])
+
 
 class TechnologicalMap(models.Model):
     """ Технологическая карта изделия """
@@ -99,3 +110,25 @@ class TechnologicalMapMaterial(models.Model):
     def __str__(self):
         return f"{self.product} в {self.technological_map}"
 
+@receiver(post_save, sender=TechnologicalMapMaterial)
+@receiver(post_save, sender=TechnologicalMapOperation)
+def update_production_item_cost(sender, instance, **kwargs):
+    """
+    Обновляет себестоимость ProductionItem при
+    изменении материалов или операций в TechnologicalMap.
+    """
+    if hasattr(instance, 'technological_map'):
+        instance.technological_map.production_item.calculate_cost_price()
+
+@receiver(pre_delete, sender=TechnologicalMapMaterial)
+@receiver(pre_delete, sender=TechnologicalMapOperation)
+def update_production_item_cost_on_delete(sender, instance, **kwargs):
+    """
+    Обновляет себестоимость ProductionItem
+    ПЕРЕД УДАЛЕНИЕМ материалов или операций из TechnologicalMap.
+    """
+    if hasattr(instance, 'technological_map'):
+        # Необходимо получить production_item до того, как instance будет удален
+        production_item = instance.technological_map.production_item
+        instance.delete()  # Удаляем материал/операцию
+        production_item.calculate_cost_price()  # Пересчитываем себестоимость

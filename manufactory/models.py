@@ -1,3 +1,5 @@
+from idlelib.textview import view_text
+
 from django.db import models
 from django.contrib.auth.models import User, Group
 from django.db.models.signals import post_save, pre_save
@@ -6,7 +8,7 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.conf import settings
 
-from HRM.models import Employee, Brigade
+from HRM.models import Employee
 from production.models import TechnologicalMap, Stage, TechnologicalMapOperation, TechnologicalMapMaterial
 from order.models import OrderItem, Order
 from wms.models import Stock
@@ -25,10 +27,10 @@ from wms.models import Stock
 
 class Assignment(models.Model):
     """ Задание на производство """
-    order_item = models.ForeignKey(OrderItem, on_delete=models.CASCADE, verbose_name="Позиция заказа",default=1)
+    order_item = models.ForeignKey(OrderItem, on_delete=models.CASCADE, verbose_name="Позиция заказа",default=1,)
     stage = models.ForeignKey(Stage, on_delete=models.CASCADE, verbose_name="Этап производства",default=1)
     operation = models.ForeignKey(TechnologicalMapOperation, on_delete=models.CASCADE, verbose_name="Операция")
-    brigade = models.ForeignKey(Brigade, on_delete=models.SET_NULL, verbose_name="Бригада", blank=True, null=True)
+    user = models.ForeignKey(Employee, on_delete=models.PROTECT, verbose_name='Сотрудник', default=1)
     quantity = models.PositiveIntegerField("Количество", default=0)
     completed_quantity = models.PositiveIntegerField("Выполнено", default=0)
     start_date = models.DateTimeField("Дата начала", blank=True, null=True)

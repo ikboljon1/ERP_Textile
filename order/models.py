@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 
 from wms.models import Product, Stock  # Импортируем модель Material из вашего приложения wms
@@ -74,32 +74,38 @@ class Order(models.Model):
     status = models.CharField("Статус", max_length=20, choices=STATUS_CHOICES, default="new")
     total_amount = models.DecimalField("Общая сумма", max_digits=10, decimal_places=2, default=0, editable=False)
     comments = models.TextField("Комментарии", blank=True)
-    total_quantity = models.PositiveIntegerField("Общее количество товаров", default=0, editable=False)
+    total_cost = models.DecimalField("Общая стоимость", max_digits=10, decimal_places=2, default=0, editable=False)
 
     def __str__(self):
         return f"Заказ №{self.uuid} от {self.order_date.strftime('%d.%m.%Y')}"
+
+    def calculate_total_cost(self):
+        """
+        Рассчитывает общую стоимость заказа, суммируя
+        стоимость всех позиций (OrderItem) в заказе.
+        """
+        self.total_cost = 0
+        for order_item in self.order_items.all():
+            self.total_cost += order_item.product.cost_price * order_item.quantity
+        self.save(update_fields=['total_cost'])
 
 class OrderItem(models.Model):
     """Позиция заказа"""
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='order_items')
     product = models.ForeignKey('production.ProductionItem', on_delete=models.PROTECT, verbose_name="Товар")
     quantity = models.PositiveIntegerField("Количество")
-    price = models.DecimalField("Цена", max_digits=10, decimal_places=2)
     color = models.CharField("Цвет", max_length=50)
     size = models.CharField("Размер", max_length=50)
     cost_price = models.DecimalField("Себестоимость", max_digits=10, decimal_places=2, default=0, editable=False)
 
-    def __str__(self):
-        return f"{self.product} - {self.quantity} шт. ({self.color}, {self.size})"
+@receiver(post_save, sender=OrderItem)
+def update_order_cost_on_create_or_update(sender, instance, **kwargs):
+    """ Обновляет общую стоимость заказа при СОЗДАНИИ или ОБНОВЛЕНИИ OrderItem """
+    instance.order.calculate_total_cost()
 
-        def calculate_cost_price(self):
-            """ Рассчитывает  себестоимость  заказа  на  основе  себестоимости  позиций  заказа. """
-            self.cost_price = self.order_items.aggregate(total_cost=models.Sum('cost_price'))['total_cost'] or 0
-            self.save()
-
-    @receiver(post_save, sender='order.OrderItem')
-    def update_order_cost_price(sender, instance, **kwargs):
-        """
-        Обновляет себестоимость заказа при создании/изменении/удалении OrderItem.
-        """
-        instance.order.calculate_cost_price()
+@receiver(pre_delete, sender=OrderItem)
+def update_order_cost_on_delete(sender, instance, **kwargs):
+    """ Обновляет общую стоимость заказа ПЕРЕД УДАЛЕНИЕМ OrderItem """
+    order = instance.order  # Сохраняем ссылку на заказ
+    instance.delete()      # Удаляем позицию заказа
+    order.calculate_total_cost()  # Пересчитываем стоимость заказа

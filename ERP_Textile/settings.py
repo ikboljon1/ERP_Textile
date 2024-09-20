@@ -42,7 +42,6 @@ INSTALLED_APPS = [
     'order',
     'manufactory',
     'HRM',
-    'finance',
     'purchase'
 ]
 

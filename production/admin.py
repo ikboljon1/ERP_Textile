@@ -1,0 +1,49 @@
+from django.contrib import admin
+from .models import (
+    ProductionItem,
+    TechnologicalMap,
+    Stage,
+    Operation,
+    TechnologicalMapOperation,
+    TechnologicalMapMaterial,
+)
+
+@admin.register(ProductionItem)
+class ProductionItemAdmin(admin.ModelAdmin):
+    list_display = ('name', 'article', 'design_description', 'size', 'color', 'batch_number', 'cost_price')
+    search_fields = ('name', 'article', 'batch_number')
+
+# @admin.register(TechnologicalMap)
+# class TechnologicalMapAdmin(admin.ModelAdmin):
+#     list_display = ('production_item', 'name', 'description')
+#     search_fields = ('production_item__name', 'name')
+
+@admin.register(Stage)
+class StageAdmin(admin.ModelAdmin):
+    list_display = ('name',  'order')
+    search_fields = ('name',)
+
+@admin.register(Operation)
+class OperationAdmin(admin.ModelAdmin):
+    list_display = ('name', 'description')
+    list_filter = ('stage',)
+    search_fields = ('name',)
+
+class TechnologicalMapOperationInline(admin.TabularInline):
+    """Вложенная таблица для операций в тех. карте"""
+    model = TechnologicalMapOperation
+    extra = 1  # Одна пустая строка для добавления новой операции
+    fields = ('operation', 'piece_rate', 'time_norm', 'unit', 'details_quantity_per_product')
+
+class TechnologicalMapMaterialInline(admin.TabularInline):
+    """Вложенная таблица для материалов в тех. карте"""
+    model = TechnologicalMapMaterial
+    extra = 1  # Одна пустая строка для добавления нового материала
+    fields = ('product', 'quantity', 'stock')
+
+@admin.register(TechnologicalMap)
+class TechnologicalMapAdmin(admin.ModelAdmin):
+    """Админка для технологической карты"""
+    list_display = ('production_item', 'name', 'description')
+    search_fields = ('production_item__name', 'name')
+    inlines = [TechnologicalMapOperationInline, TechnologicalMapMaterialInline] # Добавляем вложенные таблицы

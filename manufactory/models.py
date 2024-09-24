@@ -145,6 +145,10 @@ class Cleaning(models.Model):
         verbose_name = "Очистка"
         verbose_name_plural = "Очистка"
     # ... поля и методы ...
+    def __str__(self):
+        return (f"Очистка по заданию {self.assignment.id}, "
+                f"очиститель: {self.employee.user.username if self.employee else 'Не назначен'}")
+
 
 class Ironing(models.Model):
     """ Утюжка """
@@ -157,6 +161,10 @@ class Ironing(models.Model):
         verbose_name = "Утюжки"
         verbose_name_plural = "Утюжки"
     # ... поля и методы ...
+    def __str__(self):
+        return (f"Утюжка по заданию {self.assignment.id}, "
+                f"утюжильщик: {self.employee.user.username if self.employee else 'Не назначен'}")
+
 
 class Packing(models.Model):
     """ Упаковка """
@@ -168,4 +176,9 @@ class Packing(models.Model):
     class Meta:
         verbose_name = "Упаковка"
         verbose_name_plural = "Упаковка"
+
+    def __str__(self):
+        return (f"Упаковка по заданию {self.assignment.id}, "
+                f"упаковщик: {self.employee.user.username if self.employee else 'Не назначен'}")
+
     # ... поля и методы ...

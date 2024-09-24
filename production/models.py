@@ -79,9 +79,9 @@ class Operation(models.Model):
     description = models.TextField("Описание", blank=True)
     stage = models.ForeignKey(Stage, on_delete=models.CASCADE, verbose_name="Этап производства")
 
-
     def __str__(self):
         return self.name
+
 
 class TechnologicalMapOperation(models.Model):
     technological_map = models.ForeignKey(
@@ -95,6 +95,9 @@ class TechnologicalMapOperation(models.Model):
     time_norm = models.PositiveIntegerField("Норма времени (мин)", default=0)
     unit = models.CharField("Единица измерения", max_length=50, default="шт")
     details_quantity_per_product = models.PositiveIntegerField("Количество деталей на одно изделие", default=0)
+
+    def __str__(self):
+        return str(self.operation)
 
 class TechnologicalMapMaterial(models.Model):
     """ Материал в технологической карте """

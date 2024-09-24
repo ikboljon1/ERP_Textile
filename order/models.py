@@ -98,6 +98,8 @@ class OrderItem(models.Model):
     size = models.CharField("Размер", max_length=50)
     cost_price = models.DecimalField("Себестоимость", max_digits=10, decimal_places=2, default=0, editable=False)
 
+
+
 @receiver(post_save, sender=OrderItem)
 def update_order_cost_on_create_or_update(sender, instance, **kwargs):
     """ Обновляет общую стоимость заказа при СОЗДАНИИ или ОБНОВЛЕНИИ OrderItem """

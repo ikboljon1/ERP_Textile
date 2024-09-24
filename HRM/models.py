@@ -41,7 +41,7 @@ class Employee(AbstractUser):
     role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Роль")
 
     def __str__(self):
-        return f"{self.first_name} {self.last_name} ({self.position})"
+        return f"{self.first_name} {self.last_name}"
 
     class Meta:
         verbose_name = "Сотрудник"

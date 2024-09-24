@@ -36,6 +36,13 @@ class EmployeeAdmin(BaseUserAdmin):
         (None, {'fields': ('username', 'password')}),
         ('Personal info', {'fields': ('first_name', 'last_name', 'email')}),
         ('Company info', {'fields': ('branch', 'position', 'hire_date', 'salary', 'role')}),
+        ('Permissions', {'fields': ('is_staff', 'is_active', 'is_superuser','user_permissions')}),  # Добавляем права доступа
         ('Important dates', {'fields': ('last_login', 'date_joined')}),
+    )
+    add_fieldsets = (
+        (None, {
+            'classes': ('wide',),
+            'fields': ('username', 'password1', 'password2', 'first_name', 'last_name', 'email'),
+        }),
     )
     filter_horizontal = ('groups', 'user_permissions')

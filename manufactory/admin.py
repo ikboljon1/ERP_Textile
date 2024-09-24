@@ -4,24 +4,23 @@ from django.urls import reverse
 from .models import (
     Assignment, MaterialRequest, OperationLog, Cutting, Sewing, Cleaning, Ironing, Packing
 )
-from django.db.models import Sum
 
 
 @admin.register(Assignment)
 class AssignmentAdmin(admin.ModelAdmin):
     list_display = (
-        'id', 'order_item_link', 'operation', 'stage', 'quantity', 'completed_quantity', 'status', 'user',
+        'id',  'operation', 'stage', 'quantity', 'completed_quantity', 'status', 'user',
         'start_date', 'end_date'
     )
     list_filter = ('status', 'stage', 'user', 'operation')
     search_fields = ('order_item__order__id', 'operation__name')
     readonly_fields = ('completed_quantity',)
 
-    def order_item_link(self, obj):
-        link = reverse("admin:order_orderitem_change", args=[obj.order_item.id])
-        return format_html('<a href="{}">{}</a>', link, obj.order_item)
-
-    order_item_link.short_description = "Позиция заказа"
+    # def order_item_link(self, obj):
+    #     link = reverse("admin:order_orderitem_change", args=[obj.order_item.id])
+    #     return format_html('<a href="{}">{}</a>', link, obj.order_item)
+    #
+    # order_item_link.short_description = "Позиция заказа"
 
 @admin.register(MaterialRequest)
 class MaterialRequestAdmin(admin.ModelAdmin):

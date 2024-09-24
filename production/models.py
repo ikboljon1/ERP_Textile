@@ -47,6 +47,7 @@ class ProductionItem(models.Model):
         self.save(update_fields=['cost_price'])
 
 
+
 class TechnologicalMap(models.Model):
     """ Технологическая карта изделия """
     production_item = models.OneToOneField(

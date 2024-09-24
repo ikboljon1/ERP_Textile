@@ -1,29 +1,13 @@
-from idlelib.textview import view_text
-
 from django.db import models
 from django.contrib.auth.models import User, Group
-from django.db.models.signals import post_save, pre_save
-from django.dispatch import receiver
 from django.utils import timezone
-from django.core.exceptions import ValidationError
-from django.conf import settings
+
 
 from HRM.models import Employee
 from production.models import TechnologicalMap, Stage, TechnologicalMapOperation, TechnologicalMapMaterial
 from order.models import OrderItem, Order
 from wms.models import Stock
 
-
-# class Employee(models.Model):
-#     """ Модель сотрудника """
-#     user = models.OneToOneField(User, on_delete=models.CASCADE, verbose_name="Пользователь")
-#     group = models.ForeignKey(Group, on_delete=models.SET_NULL, verbose_name="Группа", blank=True, null=True)
-#     nfc_id = models.CharField("NFC ID", max_length=255, unique=True, blank=True, null=True)
-#     brigade = models.ForeignKey(Brigade, on_delete=models.SET_NULL, verbose_name="Бригада", blank=True, null=True)
-#     # ... другие поля, например, ФИО, должность, табельный номер
-#
-#     def __str__(self):
-#         return self.user.username
 
 class Assignment(models.Model):
     """ Задание на производство """

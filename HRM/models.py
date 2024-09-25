@@ -39,7 +39,11 @@ class Employee(AbstractUser):
     hire_date = models.DateField("Дата приема на работу", null=True, blank=True)
     salary = models.DecimalField("Оклад (повременная оплата)", max_digits=10, decimal_places=2, null=True, blank=True)
     role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Роль")
-
+    allowed_stages = models.ManyToManyField(
+        'production.Stage',
+        verbose_name="Разрешенные  этапы",
+        blank=True
+    )
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
 
@@ -73,3 +77,10 @@ class  Payroll(models.Model):
 
     def  __str__(self):
         return  f"Зарплата  {self.employee}  за  {self.period.strftime('%Y-%m')}"
+
+class NfcTag(models.Model):
+    uid = models.CharField("UID метки", max_length=255, unique=True)
+    employee = models.OneToOneField('HRM.Employee', on_delete=models.CASCADE, verbose_name="Сотрудник", null=True, blank=True)
+
+    def __str__(self):
+        return self.uid

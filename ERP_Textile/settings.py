@@ -43,7 +43,8 @@ INSTALLED_APPS = [
     'order',
     'manufactory',
     'HRM',
-    'purchase'
+    'purchase',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [

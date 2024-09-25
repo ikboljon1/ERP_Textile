@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.utils.html import format_html
 from django.urls import reverse
 from .models import (
-    Assignment, MaterialRequest, OperationLog, Cutting, Sewing, Cleaning, Ironing, Packing
+    Assignment, MaterialRequest, OperationLog
 )
 
 
@@ -37,64 +37,64 @@ class OperationLogAdmin(admin.ModelAdmin):
     search_fields = ('employee__user__username', 'operation__name')
 
 
-# Регистрация моделей этапов производства
-@admin.register(Cutting)
-class CuttingAdmin(admin.ModelAdmin):
-    list_display = ('id', 'assignment_link', 'employee', 'quantity_cut', 'fabric_leftovers',
-                    'fabric_waste', 'waste_reason', 'start_time', 'end_time')
-    list_filter = ('employee', 'assignment__order_item__order')
-    search_fields = ('employee__user__username', 'assignment__order_item__product__name')
-
-    def assignment_link(self, obj):
-        link = reverse("admin:manufactory_assignment_change", args=[obj.assignment.id])
-        return format_html('<a href="{}">{}</a>', link, obj.assignment)
-
-    assignment_link.short_description = "Задание"
-
-@admin.register(Sewing)
-class SewingAdmin(admin.ModelAdmin):
-    list_display = ('id', 'assignment_link', 'employee', 'quantity_sewn', 'start_time', 'end_time')
-    list_filter = ('employee', 'assignment__order_item__order')
-    search_fields = ('employee__user__username', 'assignment__order_item__product__name')
-
-    def assignment_link(self, obj):
-        link = reverse("admin:manufactory_assignment_change", args=[obj.assignment.id])
-        return format_html('<a href="{}">{}</a>', link, obj.assignment)
-
-    assignment_link.short_description = "Задание"
-
-@admin.register(Cleaning)
-class CleaningAdmin(admin.ModelAdmin):
-    list_display = ('id', 'assignment_link', 'employee', 'quantity_cleaned', 'start_time', 'end_time')
-    list_filter = ('employee', 'assignment__order_item__order')
-    search_fields = ('employee__user__username', 'assignment__order_item__product__name')
-
-    def assignment_link(self, obj):
-        link = reverse("admin:manufactory_assignment_change", args=[obj.assignment.id])
-        return format_html('<a href="{}">{}</a>', link, obj.assignment)
-
-    assignment_link.short_description = "Задание"
-
-@admin.register(Ironing)
-class IroningAdmin(admin.ModelAdmin):
-    list_display = ('id', 'assignment_link', 'employee', 'quantity_ironed', 'start_time', 'end_time')
-    list_filter = ('employee', 'assignment__order_item__order')
-    search_fields = ('employee__user__username', 'assignment__order_item__product__name')
-
-    def assignment_link(self, obj):
-        link = reverse("admin:manufactory_assignment_change", args=[obj.assignment.id])
-        return format_html('<a href="{}">{}</a>', link, obj.assignment)
-
-    assignment_link.short_description = "Задание"
-
-@admin.register(Packing)
-class PackingAdmin(admin.ModelAdmin):
-    list_display = ('id', 'assignment_link', 'employee', 'quantity_packed', 'start_time', 'end_time')
-    list_filter = ('employee', 'assignment__order_item__order')
-    search_fields = ('employee__user__username', 'assignment__order_item__product__name')
-
-    def assignment_link(self, obj):
-        link = reverse("admin:manufactory_assignment_change", args=[obj.assignment.id])
-        return format_html('<a href="{}">{}</a>', link, obj.assignment)
-
-    assignment_link.short_description = "Задание"
+# # Регистрация моделей этапов производства
+# @admin.register(Cutting)
+# class CuttingAdmin(admin.ModelAdmin):
+#     list_display = ('id', 'assignment_link', 'employee', 'quantity_cut', 'fabric_leftovers',
+#                     'fabric_waste', 'waste_reason', 'start_time', 'end_time')
+#     list_filter = ('employee', 'assignment__order_item__order')
+#     search_fields = ('employee__user__username', 'assignment__order_item__product__name')
+#
+#     def assignment_link(self, obj):
+#         link = reverse("admin:manufactory_assignment_change", args=[obj.assignment.id])
+#         return format_html('<a href="{}">{}</a>', link, obj.assignment)
+#
+#     assignment_link.short_description = "Задание"
+#
+# @admin.register(Sewing)
+# class SewingAdmin(admin.ModelAdmin):
+#     list_display = ('id', 'assignment_link', 'employee', 'quantity_sewn', 'start_time', 'end_time')
+#     list_filter = ('employee', 'assignment__order_item__order')
+#     search_fields = ('employee__user__username', 'assignment__order_item__product__name')
+#
+#     def assignment_link(self, obj):
+#         link = reverse("admin:manufactory_assignment_change", args=[obj.assignment.id])
+#         return format_html('<a href="{}">{}</a>', link, obj.assignment)
+#
+#     assignment_link.short_description = "Задание"
+#
+# @admin.register(Cleaning)
+# class CleaningAdmin(admin.ModelAdmin):
+#     list_display = ('id', 'assignment_link', 'employee', 'quantity_cleaned', 'start_time', 'end_time')
+#     list_filter = ('employee', 'assignment__order_item__order')
+#     search_fields = ('employee__user__username', 'assignment__order_item__product__name')
+#
+#     def assignment_link(self, obj):
+#         link = reverse("admin:manufactory_assignment_change", args=[obj.assignment.id])
+#         return format_html('<a href="{}">{}</a>', link, obj.assignment)
+#
+#     assignment_link.short_description = "Задание"
+#
+# @admin.register(Ironing)
+# class IroningAdmin(admin.ModelAdmin):
+#     list_display = ('id', 'assignment_link', 'employee', 'quantity_ironed', 'start_time', 'end_time')
+#     list_filter = ('employee', 'assignment__order_item__order')
+#     search_fields = ('employee__user__username', 'assignment__order_item__product__name')
+#
+#     def assignment_link(self, obj):
+#         link = reverse("admin:manufactory_assignment_change", args=[obj.assignment.id])
+#         return format_html('<a href="{}">{}</a>', link, obj.assignment)
+#
+#     assignment_link.short_description = "Задание"
+#
+# @admin.register(Packing)
+# class PackingAdmin(admin.ModelAdmin):
+#     list_display = ('id', 'assignment_link', 'employee', 'quantity_packed', 'start_time', 'end_time')
+#     list_filter = ('employee', 'assignment__order_item__order')
+#     search_fields = ('employee__user__username', 'assignment__order_item__product__name')
+#
+#     def assignment_link(self, obj):
+#         link = reverse("admin:manufactory_assignment_change", args=[obj.assignment.id])
+#         return format_html('<a href="{}">{}</a>', link, obj.assignment)
+#
+#     assignment_link.short_description = "Задание"

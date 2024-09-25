@@ -14,7 +14,7 @@ def update_stock_on_receipt(sender, instance, created, **kwargs):
                 stock, _ = Stock.objects.get_or_create(product=item.product, warehouse=instance.warehouse)
                 stock.quantity += item.quantity
                 stock.save()
-
+    
 # --- Сигналы для модели ReceiptItem ---
 
 @receiver(post_save, sender=ReceiptItem)

@@ -7,22 +7,18 @@ from datetime import date
 from django.contrib.contenttypes.models import ContentType
 
 
-
-class PermissionInline(admin.TabularInline):
-    model = Permission
-    extra = 1
+class PermissionAdmin(admin.ModelAdmin):
+    list_display = ('role', 'content_type', 'can_view', 'can_create', 'can_edit', 'can_delete')
+    list_filter = ('role', 'content_type')
+    search_fields = ('role__name', 'content_type__app_label', 'content_type__model')
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "content_type":
-            # Ограничиваем выбор моделями (по желанию)
             app_labels = ['order', 'wms', 'manufactory', 'production', 'HRM']
             kwargs["queryset"] = ContentType.objects.filter(app_label__in=app_labels)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
-@admin.register(Role)
-class RoleAdmin(admin.ModelAdmin):
-    inlines = [PermissionInline]
-
+admin.site.register(Permission, PermissionAdmin)
 
 # Регистрируем остальные модели
 admin.site.register(Branch)

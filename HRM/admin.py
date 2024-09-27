@@ -1,12 +1,12 @@
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin, GroupAdmin as BaseGroupAdmin
 from django.contrib.auth.models import Group
 from .models import Role, Permission, Branch, Employee, Brigade, Sewing
 from django.contrib.contenttypes.models import ContentType
 
 
 class PermissionAdmin(admin.ModelAdmin):
-    list_display = ('role', 'content_type', 'can_view', 'can_create', 'can_edit', 'can_delete')
+    list_display = ('content_type', 'can_view', 'can_create', 'can_edit', 'can_delete')
     list_filter = ('role', 'content_type')
     search_fields = ('role__name', 'content_type__app_label', 'content_type__model')
 
@@ -25,7 +25,7 @@ admin.site.register(Branch)
 
 @admin.register(Employee)
 class EmployeeAdmin(BaseUserAdmin):
-    list_display = ('username', 'email', 'first_name', 'last_name', 'position', 'branch', 'role', 'is_staff',)
+    list_display = ('username', 'email', 'first_name', 'last_name', 'position', 'branch', 'is_staff',)
     list_filter = ('branch', 'role', 'is_staff', 'is_active')
     search_fields = ('username', 'first_name', 'last_name', 'email')
     actions = ['calculate_salary_action']
@@ -33,8 +33,8 @@ class EmployeeAdmin(BaseUserAdmin):
     fieldsets = (
         (None, {'fields': ('username', 'password')}),  # Основные поля
         ('Личная информация', {'fields': ('first_name', 'last_name', 'email')}),  # Личная информация
-        ('Информация о компании', {'fields': ('branch', 'position', 'hire_date', 'salary', 'role')}),  # Данные о работе
-        ('Права', {'fields': ('is_staff', 'is_active', 'is_superuser', 'groups', 'user_permissions')}),  # Права доступа
+        ('Информация о компании', {'fields': ('branch', 'position', 'hire_date', 'role')}),  # Данные о работе
+        ('Права', {'fields': ('is_staff', 'is_active', 'is_superuser', 'groups',)}),  # Права доступа
         ('Важные даты', {'fields': ('last_login', 'date_joined')}),  # Даты
     )
 
@@ -58,8 +58,14 @@ class EmployeeAdmin(BaseUserAdmin):
     #
     # calculate_salary_action.short_description = "Рассчитать зарплату для выбранных сотрудников"
 
+class CustomGroupAdmin(BaseGroupAdmin):
+    def get_app_label(self):
+        # Возвращаем метку приложения "HRM"
+        return 'HRM'
 
-# Регистрируем модель Role для админки
+admin.site.unregister(Group)
+admin.site.register(Group, CustomGroupAdmin)
+
 @admin.register(Role)
 class RoleAdmin(admin.ModelAdmin):
     list_display = ('name',)

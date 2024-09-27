@@ -19,26 +19,25 @@ class Branch(models.Model):
     class Meta:
         verbose_name = "Филиал"
         verbose_name_plural = "Филиалы"
+class Permission(models.Model):
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name="hrm_permissions")
+    can_view = models.BooleanField("Просмотр", default=False)
+    can_create = models.BooleanField("Создание", default=False)
+    can_edit = models.BooleanField("Редактирование", default=False)
+    can_delete = models.BooleanField("Удаление", default=False)
 
-class Role(models.Model):
-    name = models.CharField(max_length=100, unique=True)
-    group = models.OneToOneField(Group, on_delete=models.CASCADE, verbose_name="Группа", null=True, blank=True)
-
-    def __str__(self):
-        return self.name
-
-    def assign_permissions(self, permissions):
-        """
-        Присваивает права этой роли
-        """
-        for perm in permissions:
-            permission = Permission.objects.get(codename=perm)
-            self.group.permissions.add(permission)
 
 
     class Meta:
-        verbose_name = "Роль"
-        verbose_name_plural = "Роли"
+        verbose_name = "Разрешение"
+        verbose_name_plural = "Разрешения"
+
+class Role(models.Model):
+    name = models.CharField(max_length=100, unique=True, verbose_name="Название роли")
+    permissions = models.ManyToManyField(Permission, verbose_name="Права")
+
+    def __str__(self):
+        return self.name
 
 
 class Employee(AbstractUser):
@@ -74,6 +73,11 @@ class Employee(AbstractUser):
     )
     is_active = models.BooleanField("Работает в данный момент", default=True)
     role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Роль")
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.role:
+            self.user_permissions.set(self.role.permissions.all())
     allowed_stages = models.ManyToManyField(
         'production.Stage',
         verbose_name="Разрешенные этапы",
@@ -83,37 +87,15 @@ class Employee(AbstractUser):
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
 
-    def assign_role(self, role):
-        """
-        Назначаем роль сотруднику, присваивая его группе права этой роли
-        """
-        self.role = role
-        group = role.group
-        self.groups.clear()  # Очищаем предыдущие группы пользователя
-        if group:
-            self.groups.add(group)  # Назначаем группу новой роли
-        self.save()
-
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.role:
+            # Get the IDs of permissions using values_list()
+            permission_ids = self.role.permissions.values_list('id', flat=True)
+            self.user_permissions.set(permission_ids)  # Assign permission IDs
     class Meta:
         verbose_name = "Сотрудник"
         verbose_name_plural = "Сотрудники"
-
-class Permission(models.Model):
-    role = models.ForeignKey(Role, on_delete=models.CASCADE, verbose_name="Роль")
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name="hrm_permissions")
-    can_view = models.BooleanField("Просмотр", default=False)
-    can_create = models.BooleanField("Создание", default=False)
-    can_edit = models.BooleanField("Редактирование", default=False)
-    can_delete = models.BooleanField("Удаление", default=False)
-
-    def __str__(self):
-        model_name = self.content_type.model_class().__name__ if self.content_type else "N/A"
-        return f"Разрешения для {self.role.name} на {model_name}"
-
-    class Meta:
-        verbose_name = "Разрешение"
-        verbose_name_plural = "Разрешения"
-
 
 
 class NfcTag(models.Model):

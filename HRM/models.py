@@ -1,5 +1,5 @@
 from datetime import date
-
+from django.contrib.auth.models import AbstractUser, Group
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.db import models
 from django.contrib.auth.models import User, AbstractUser
@@ -21,11 +21,20 @@ class Branch(models.Model):
         verbose_name_plural = "Филиалы"
 
 class Role(models.Model):
-    """ Модель для хранения ролей """
-    name = models.CharField("Название роли", max_length=100, unique=True)
+    name = models.CharField(max_length=100, unique=True)
+    group = models.OneToOneField(Group, on_delete=models.CASCADE, verbose_name="Группа", null=True, blank=True)
 
     def __str__(self):
         return self.name
+
+    def assign_permissions(self, permissions):
+        """
+        Присваивает права этой роли
+        """
+        for perm in permissions:
+            permission = Permission.objects.get(codename=perm)
+            self.group.permissions.add(permission)
+
 
     class Meta:
         verbose_name = "Роль"
@@ -33,7 +42,7 @@ class Role(models.Model):
 
 
 class Employee(AbstractUser):
-    """ Сотрудник """
+    """ Сотрудник компании """
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Филиал")
     position = models.CharField("Должность", max_length=100)
     hire_date = models.DateField("Дата приема на работу", null=True, blank=True)
@@ -67,11 +76,23 @@ class Employee(AbstractUser):
     role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Роль")
     allowed_stages = models.ManyToManyField(
         'production.Stage',
-        verbose_name="Разрешенные  этапы",
+        verbose_name="Разрешенные этапы",
         blank=True
     )
+
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
+
+    def assign_role(self, role):
+        """
+        Назначаем роль сотруднику, присваивая его группе права этой роли
+        """
+        self.role = role
+        group = role.group
+        self.groups.clear()  # Очищаем предыдущие группы пользователя
+        if group:
+            self.groups.add(group)  # Назначаем группу новой роли
+        self.save()
 
     class Meta:
         verbose_name = "Сотрудник"
@@ -107,13 +128,10 @@ class Brigade(models.Model):
 
     def __str__(self):
         return self.name
-# class  Payroll(models.Model):
-#     employee  =  models.ForeignKey(Employee,  on_delete=models.CASCADE,  verbose_name="Сотрудник")
-#     period  =  models.DateField("Период",  default=date.today)  #  Дата  (например,  первый  день  месяца)  для  обозначения  периода  начисления
-#     salary  =  models.DecimalField("Оклад",  max_digits=10,  decimal_places=2,  default=0)
-#     bonuses  =  models.DecimalField("Премии",  max_digits=10,  decimal_places=2,  default=0)
-#     deductions  =  models.DecimalField("Удержания",  max_digits=10,  decimal_places=2,  default=0)
-#     total  =  models.DecimalField("Итого",  max_digits=10,  decimal_places=2,  default=0)
-#
-#     def  __str__(self):
-#         return  f"Зарплата  {self.employee}  за  {self.period.strftime('%Y-%m')}"
+
+class Sewing(models.Model):
+    name = models.CharField(max_length=100)
+    code = models.DecimalField(max_digits=9999, decimal_places=0)
+
+    def __str__(self):
+        return f"{self.name} - {self.code}"

@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User, Group
 from django.utils import timezone
-from HRM.models import Employee, Brigade
+from HRM.models import Employee, Brigade, Sewing
 from production.models import TechnologicalMap, Stage, TechnologicalMapOperation, TechnologicalMapMaterial
 from order.models import OrderItem, Order
 from wms.models import Stock
@@ -10,7 +10,7 @@ from wms.models import Stock
 class Assignment(models.Model):
     """ Задание на производство """
     order_item = models.ForeignKey(OrderItem, on_delete=models.CASCADE, verbose_name="Позиция заказа")
-    brigade = models.ForeignKey(Brigade, on_delete=models.CASCADE, verbose_name="Бригада")
+    brigade = models.ForeignKey(Brigade, on_delete=models.CASCADE, verbose_name="Бригада", null=True, blank=True)
     quantity = models.PositiveIntegerField("Количество", default=0)
     completed_quantity = models.PositiveIntegerField("Выполнено", default=0)
     start_date = models.DateTimeField("Дата начала", blank=True, null=True)
@@ -62,7 +62,7 @@ class MaterialRequest(models.Model):
 class OperationLog(models.Model):
     """ Журнал операций производства """
     assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, verbose_name="Задание")
-    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, verbose_name="Сотрудник")
+    employee = models.ForeignKey(Sewing, on_delete=models.CASCADE, verbose_name="Сотрудник")
     operation = models.ForeignKey('production.TechnologicalMapOperation', on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField("Количество")
     start_time = models.DateTimeField("Время начала", default=timezone.now)
@@ -86,7 +86,7 @@ class OperationLog(models.Model):
     def __str__(self):
         return f"Фактические данные по операции '{self.operation.operation.name}Задании №{self.assignment.pk}"
 
-    class Meta:
+    class Meta:                                                                                                                           
         verbose_name = "Запись журнала операций"
         verbose_name_plural = "Журнал операций"
 
@@ -105,3 +105,4 @@ class  Defect(models.Model):
     class  Meta:
         verbose_name  =  "Брак"
         verbose_name_plural  =  "Брак"
+

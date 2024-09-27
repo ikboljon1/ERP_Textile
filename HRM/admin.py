@@ -1,9 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from django.contrib.auth.models import User
-from .models import Role, Permission, Branch, Employee
-# from .utils import calculate_payroll, has_permission
-from datetime import date
+from django.contrib.auth.models import Group
+from .models import Role, Permission, Branch, Employee, Brigade, Sewing
 from django.contrib.contenttypes.models import ContentType
 
 
@@ -18,27 +16,57 @@ class PermissionAdmin(admin.ModelAdmin):
             kwargs["queryset"] = ContentType.objects.filter(app_label__in=app_labels)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
+
 admin.site.register(Permission, PermissionAdmin)
 
 # Регистрируем остальные модели
 admin.site.register(Branch)
 
+
 @admin.register(Employee)
 class EmployeeAdmin(BaseUserAdmin):
-    list_display = ('username', 'email', 'first_name', 'last_name', 'position', 'is_staff',)
+    list_display = ('username', 'email', 'first_name', 'last_name', 'position', 'branch', 'role', 'is_staff',)
+    list_filter = ('branch', 'role', 'is_staff', 'is_active')
+    search_fields = ('username', 'first_name', 'last_name', 'email')
     actions = ['calculate_salary_action']
 
     fieldsets = (
-        (None, {'fields': ('username', 'password')}),
-        ('Personal info', {'fields': ('first_name', 'last_name', 'email')}),
-        ('Company info', {'fields': ('branch', 'position', 'hire_date', 'salary', 'role')}),
-        ('Permissions', {'fields': ('is_staff', 'is_active', 'is_superuser','user_permissions')}),  # Добавляем права доступа
-        ('Important dates', {'fields': ('last_login', 'date_joined')}),
+        (None, {'fields': ('username', 'password')}),  # Основные поля
+        ('Личная информация', {'fields': ('first_name', 'last_name', 'email')}),  # Личная информация
+        ('Информация о компании', {'fields': ('branch', 'position', 'hire_date', 'salary', 'role')}),  # Данные о работе
+        ('Права', {'fields': ('is_staff', 'is_active', 'is_superuser', 'groups', 'user_permissions')}),  # Права доступа
+        ('Важные даты', {'fields': ('last_login', 'date_joined')}),  # Даты
     )
+
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('username', 'password1', 'password2', 'first_name', 'last_name', 'email'),
+            'fields': ('username', 'password1', 'password2', 'first_name', 'last_name', 'email', 'role'),
         }),
     )
+
     filter_horizontal = ('groups', 'user_permissions')
+
+    # def save_related(self, request, obj, form, change):
+    #     super().save_related(request, obj, form, change)  # Сохраняем связанные объекты
+    #     if obj.role:  # Если роль назначена, применяем её
+    #         obj.assign_role(obj.role)
+    #
+    # def calculate_salary_action(self, request, queryset):
+    #     # Здесь добавьте логику для расчета зарплаты
+    #     pass
+    #
+    # calculate_salary_action.short_description = "Рассчитать зарплату для выбранных сотрудников"
+
+
+# Регистрируем модель Role для админки
+@admin.register(Role)
+class RoleAdmin(admin.ModelAdmin):
+    list_display = ('name',)
+    search_fields = ('name',)
+
+admin.site.register(Brigade)
+
+@admin.register(Sewing)
+class SewingAdmin(admin.ModelAdmin):
+    list_display = ('name', 'code')

@@ -37,7 +37,33 @@ class Employee(AbstractUser):
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Филиал")
     position = models.CharField("Должность", max_length=100)
     hire_date = models.DateField("Дата приема на работу", null=True, blank=True)
-    salary = models.DecimalField("Оклад (повременная оплата)", max_digits=10, decimal_places=2, null=True, blank=True)
+    PAYMENT_TYPE_CHOICES = [
+        ('piecework', 'Сдельная'),
+        ('salary', 'Повременная'),
+    ]
+    payment_type = models.CharField(
+        "Тип оплаты труда",
+        max_length=20,
+        choices=PAYMENT_TYPE_CHOICES,
+        default='piecework'
+    )
+    hourly_rate = models.DecimalField(
+        "Почасовая ставка",
+        max_digits=8,
+        decimal_places=2,
+        default=0,
+        blank=True,
+        null=True
+    )
+    piece_rate = models.DecimalField(
+        "Ставка за штуку",
+        max_digits=8,
+        decimal_places=2,
+        default=0,
+        blank=True,
+        null=True
+    )
+    is_active = models.BooleanField("Работает в данный момент", default=True)
     role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Роль")
     allowed_stages = models.ManyToManyField(
         'production.Stage',
@@ -67,16 +93,7 @@ class Permission(models.Model):
         verbose_name = "Разрешение"
         verbose_name_plural = "Разрешения"
 
-class  Payroll(models.Model):
-    employee  =  models.ForeignKey(Employee,  on_delete=models.CASCADE,  verbose_name="Сотрудник")
-    period  =  models.DateField("Период",  default=date.today)  #  Дата  (например,  первый  день  месяца)  для  обозначения  периода  начисления
-    salary  =  models.DecimalField("Оклад",  max_digits=10,  decimal_places=2,  default=0)
-    bonuses  =  models.DecimalField("Премии",  max_digits=10,  decimal_places=2,  default=0)
-    deductions  =  models.DecimalField("Удержания",  max_digits=10,  decimal_places=2,  default=0)
-    total  =  models.DecimalField("Итого",  max_digits=10,  decimal_places=2,  default=0)
 
-    def  __str__(self):
-        return  f"Зарплата  {self.employee}  за  {self.period.strftime('%Y-%m')}"
 
 class NfcTag(models.Model):
     uid = models.CharField("UID метки", max_length=255, unique=True)
@@ -84,3 +101,19 @@ class NfcTag(models.Model):
 
     def __str__(self):
         return self.uid
+
+class Brigade(models.Model):
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
+# class  Payroll(models.Model):
+#     employee  =  models.ForeignKey(Employee,  on_delete=models.CASCADE,  verbose_name="Сотрудник")
+#     period  =  models.DateField("Период",  default=date.today)  #  Дата  (например,  первый  день  месяца)  для  обозначения  периода  начисления
+#     salary  =  models.DecimalField("Оклад",  max_digits=10,  decimal_places=2,  default=0)
+#     bonuses  =  models.DecimalField("Премии",  max_digits=10,  decimal_places=2,  default=0)
+#     deductions  =  models.DecimalField("Удержания",  max_digits=10,  decimal_places=2,  default=0)
+#     total  =  models.DecimalField("Итого",  max_digits=10,  decimal_places=2,  default=0)
+#
+#     def  __str__(self):
+#         return  f"Зарплата  {self.employee}  за  {self.period.strftime('%Y-%m')}"

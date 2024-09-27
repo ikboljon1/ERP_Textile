@@ -98,6 +98,8 @@ class OrderItem(models.Model):
     size = models.CharField("Размер", max_length=50)
     cost_price = models.DecimalField("Себестоимость", max_digits=10, decimal_places=2, default=0, editable=False)
 
+    def __str__(self):
+        return f"{self.product.name} {self.quantity} {self.color} {self.size}"
 
 
 @receiver(post_save, sender=OrderItem)

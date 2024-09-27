@@ -10,8 +10,8 @@ from wms.models import Stock
 class Assignment(models.Model):
 
     class Meta:
-        verbose_name = 'Назначения'
-        verbose_name_plural = 'Назначения'
+        verbose_name = 'Заказ на производство'
+        verbose_name_plural = 'Заказ на производство'
 
     """ Задание на производство """
     order_item = models.ForeignKey(OrderItem, on_delete=models.CASCADE, verbose_name="Позиция заказа")
@@ -93,8 +93,8 @@ class OperationLog(models.Model):
         return f"Фактические данные по операции '{self.operation.operation.name}Задании №{self.assignment.pk}"
 
     class Meta:
-        verbose_name = "Запись журнала операций"
-        verbose_name_plural = "Журнал операций"
+        verbose_name = "Назначения"
+        verbose_name_plural = "Назначения"
 
 class  Defect(models.Model):
 

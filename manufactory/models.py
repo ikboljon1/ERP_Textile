@@ -8,6 +8,11 @@ from wms.models import Stock
 
 
 class Assignment(models.Model):
+
+    class Meta:
+        verbose_name = 'Назначения'
+        verbose_name_plural = 'Назначения'
+
     """ Задание на производство """
     order_item = models.ForeignKey(OrderItem, on_delete=models.CASCADE, verbose_name="Позиция заказа")
     brigade = models.ForeignKey(Brigade, on_delete=models.CASCADE, verbose_name="Бригада", null=True, blank=True)
@@ -60,6 +65,7 @@ class MaterialRequest(models.Model):
         verbose_name_plural = "Заявки на материалы"
 
 class OperationLog(models.Model):
+
     """ Журнал операций производства """
     assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, verbose_name="Задание")
     employee = models.ForeignKey(Sewing, on_delete=models.CASCADE, verbose_name="Сотрудник")
@@ -86,11 +92,12 @@ class OperationLog(models.Model):
     def __str__(self):
         return f"Фактические данные по операции '{self.operation.operation.name}Задании №{self.assignment.pk}"
 
-    class Meta:                                                                                                                           
+    class Meta:
         verbose_name = "Запись журнала операций"
         verbose_name_plural = "Журнал операций"
 
 class  Defect(models.Model):
+
     """  Модель  для  учета  брака  """
     assignment  =  models.ForeignKey(Assignment,  on_delete=models.CASCADE,  verbose_name="Задание")
     employee  =  models.ForeignKey(Employee,  on_delete=models.CASCADE,  verbose_name="Сотрудник")

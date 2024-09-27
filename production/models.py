@@ -9,6 +9,10 @@ from django.db.models import Sum, F
 
 
 class ProductionItem(models.Model):
+    class Meta:
+        verbose_name = 'Карточка модели'
+        verbose_name_plural = verbose_name
+
     """ Изделие в заказе на производство """
     name = models.CharField("Название", max_length=255)
     article = models.CharField("Артикул", max_length=50, blank=True)
@@ -57,6 +61,10 @@ class ProductionItem(models.Model):
 
 
 class TechnologicalMap(models.Model):
+    class Meta:
+        verbose_name = 'Технологическая карта'
+        verbose_name_plural = verbose_name
+
     """ Технологическая карта изделия """
     production_item = models.OneToOneField(
         ProductionItem,
@@ -76,6 +84,8 @@ class Stage(models.Model):
     order = models.PositiveIntegerField("Порядок в тех. процессе", default=0)
 
     class Meta:
+        verbose_name = 'Этапы'
+        verbose_name_plural = verbose_name
         ordering = ['order']  # Сортировка по полю 'order'
 
     def __str__(self):
@@ -86,6 +96,10 @@ class Operation(models.Model):
     name = models.CharField("Название операции", max_length=255)
     description = models.TextField("Описание", blank=True)
     stage = models.ForeignKey(Stage, on_delete=models.CASCADE, verbose_name="Этап производства")
+
+    class Meta:
+        verbose_name = 'Операции'
+        verbose_name_plural = verbose_name
 
     def __str__(self):
         return self.name
@@ -104,6 +118,10 @@ class TechnologicalMapOperation(models.Model):
     unit = models.CharField("Единица измерения", max_length=50, default="шт")
     details_quantity_per_product = models.PositiveIntegerField("Количество деталей на одно изделие", default=0)
 
+    class Meta:
+        verbose_name = 'Тех карта операции'
+        verbose_name_plural = verbose_name
+
     def __str__(self):
         return str(self.operation)
 
@@ -118,6 +136,10 @@ class TechnologicalMapMaterial(models.Model):
     product = models.ForeignKey(Product, on_delete=models.PROTECT, verbose_name='Материал')
     quantity = models.DecimalField("Количество", max_digits=10, decimal_places=2, validators=[MinValueValidator(0.01)])
     stock = models.ForeignKey(Warehouse, on_delete=models.PROTECT, verbose_name="Склад", null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'Тех карта материала'
+        verbose_name_plural = verbose_name
 
     def __str__(self):
         return f"{self.product} в {self.technological_map}"

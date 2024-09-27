@@ -175,6 +175,9 @@ class Return(models.Model):
     return_date = models.DateTimeField("Дата возврата", auto_now_add=True)
     quantity = models.DecimalField("Количество", max_digits=10, decimal_places=2)
     reason = models.TextField("Причина возврата", blank=True)
+    class Meta:
+        verbose_name = 'Возврат'
+        verbose_name_plural = verbose_name
 
     def __str__(self):
         return f"Возврат товара {self.receipt_item.product.name} от {self.return_date} (поступление №{self.receipt_item.receipt.receipt_number})"

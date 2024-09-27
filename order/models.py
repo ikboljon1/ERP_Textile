@@ -11,10 +11,18 @@ class Customer(models.Model):
     phone = models.CharField("Телефон", max_length=20, blank=True)
     email = models.EmailField("Email", blank=True)
 
+    class Meta:
+        verbose_name = 'Клиент'
+        verbose_name_plural = verbose_name
+
     def __str__(self):
         return self.name
 
 class Order(models.Model):
+    class Meta:
+        verbose_name = 'Заказы'
+        verbose_name_plural = verbose_name
+
     """Заказ клиента"""
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT, verbose_name="Клиент")
     uuid = models.CharField("Номер заказа", max_length=50, blank=True)
@@ -100,6 +108,8 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.product.name} {self.quantity} {self.color} {self.size}"
+    class Meta:
+        verbose_name = 'Пункты заказа'
 
 
 @receiver(post_save, sender=OrderItem)

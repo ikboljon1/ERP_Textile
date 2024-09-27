@@ -36,6 +36,10 @@ class Role(models.Model):
     name = models.CharField(max_length=100, unique=True, verbose_name="Название роли")
     permissions = models.ManyToManyField(Permission, verbose_name="Права")
 
+    class Meta:
+        verbose_name = 'Роль'
+        verbose_name_plural = verbose_name
+
     def __str__(self):
         return self.name
 
@@ -102,11 +106,19 @@ class NfcTag(models.Model):
     uid = models.CharField("UID метки", max_length=255, unique=True)
     employee = models.OneToOneField('HRM.Employee', on_delete=models.CASCADE, verbose_name="Сотрудник", null=True, blank=True)
 
+    class Meta:
+        verbose_name = 'NFC'
+        verbose_name_plural = 'NFC'
+
     def __str__(self):
         return self.uid
 
 class Brigade(models.Model):
     name = models.CharField(max_length=100)
+
+    class Meta:
+        verbose_name = "Бригада"
+        verbose_name_plural = 'Бригада'
 
     def __str__(self):
         return self.name
@@ -114,6 +126,10 @@ class Brigade(models.Model):
 class Sewing(models.Model):
     name = models.CharField(max_length=100)
     code = models.DecimalField(max_digits=9999, decimal_places=0)
+
+    class Meta:
+        verbose_name = 'Швея'
+        verbose_name_plural = 'Швея'
 
     def __str__(self):
         return f"{self.name} - {self.code}"

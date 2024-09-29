@@ -6,12 +6,22 @@ from .models import (
     Operation,
     TechnologicalMapOperation,
     TechnologicalMapMaterial,
+    Color,
 )
+
+@admin.register(Color)
+class ColorAdmin(admin.ModelAdmin):
+    list_display = ('name', 'color_tag')
+    search_fields = ('name', 'color')
+
+
+
 
 @admin.register(ProductionItem)
 class ProductionItemAdmin(admin.ModelAdmin):
-    list_display = ('name', 'article', 'design_description', 'size', 'color', 'batch_number', 'cost_price')
+    list_display = ( 'name', 'article', 'design_description', 'size',  'batch_number', 'cost_price')
     search_fields = ('name', 'article', 'batch_number')
+
 
 # @admin.register(TechnologicalMap)
 # class TechnologicalMapAdmin(admin.ModelAdmin):

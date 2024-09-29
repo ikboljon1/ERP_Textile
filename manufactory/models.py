@@ -1,8 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import User, Group
+from django.db.models import CharField
 from django.utils import timezone
 from HRM.models import Employee, Brigade, Sewing
-from production.models import TechnologicalMap, Stage, TechnologicalMapOperation, TechnologicalMapMaterial
+from production.models import TechnologicalMap, Stage, TechnologicalMapOperation, TechnologicalMapMaterial, ProductionItem
 from order.models import OrderItem, Order
 from wms.models import Stock
 
@@ -14,10 +15,8 @@ class Assignment(models.Model):
         verbose_name_plural = 'Заказ на производство'
 
     """ Задание на производство """
-    order_item = models.ForeignKey(OrderItem, on_delete=models.CASCADE, verbose_name="Позиция заказа")
-    brigade = models.ForeignKey(Brigade, on_delete=models.CASCADE, verbose_name="Бригада", null=True, blank=True)
-    quantity = models.PositiveIntegerField("Количество", default=0)
-    completed_quantity = models.PositiveIntegerField("Выполнено", default=0)
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, verbose_name='Заказ', null=True, blank=True)
+    # order_item = models.ForeignKey(OrderItem, on_delete=models.CASCADE, verbose_name="Позиция заказа")
     start_date = models.DateTimeField("Дата начала", blank=True, null=True)
     end_date = models.DateTimeField("Дата окончания", blank=True, null=True)
     status = models.CharField(
@@ -32,10 +31,7 @@ class Assignment(models.Model):
         default="new",
     )
     def __str__(self):
-        return f"Задание {self.id} ({self.brigade} для {self.order_item})"
-
-    def is_completed(self):
-        return self.completed_quantity >= self.quantity
+        return f"Задание {self.order}"
 
 
 
@@ -64,10 +60,24 @@ class MaterialRequest(models.Model):
         verbose_name = "Заявка на материал"
         verbose_name_plural = "Заявки на материалы"
 
+class Cutting(models.Model):
+    class Meta:
+        verbose_name = 'Крой'
+        verbose_name_plural = 'Крой'
+
+    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, verbose_name="Задание")
+    order_item = models.ForeignKey(OrderItem, on_delete=models.CASCADE, verbose_name="Позиция заказа")
+    quantity = models.PositiveIntegerField('Количество')
+    map = models.CharField('Карта', max_length=255 )
+
+
+
 class OperationLog(models.Model):
 
     """ Журнал операций производства """
     assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, verbose_name="Задание")
+    order_item = models.ForeignKey(OrderItem, on_delete=models.CASCADE, verbose_name="Позиция заказа", null=True, blank=True)
+    brigade = models.ForeignKey(Brigade, on_delete=models.CASCADE, verbose_name="Бригада", null=True, blank=True)
     employee = models.ForeignKey(Sewing, on_delete=models.CASCADE, verbose_name="Сотрудник")
     operation = models.ForeignKey('production.TechnologicalMapOperation', on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField("Количество")
@@ -100,7 +110,7 @@ class  Defect(models.Model):
 
     """  Модель  для  учета  брака  """
     assignment  =  models.ForeignKey(Assignment,  on_delete=models.CASCADE,  verbose_name="Задание")
-    employee  =  models.ForeignKey(Employee,  on_delete=models.CASCADE,  verbose_name="Сотрудник")
+    employee  =  models.ForeignKey(Sewing,  on_delete=models.CASCADE,  verbose_name="Сотрудник")
     operation  =  models.ForeignKey(TechnologicalMapOperation,  on_delete=models.CASCADE,  verbose_name="Операция")
     quantity  =  models.PositiveIntegerField("Количество  бракованных  изделий")
     description  =  models.TextField("Описание  брака",  blank=True)

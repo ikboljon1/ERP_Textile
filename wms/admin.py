@@ -73,11 +73,11 @@ class unitOfMeasureAdmin(admin.ModelAdmin):
     search_fields = ('name','short_name')
 admin.site.register(UnitOfMeasure, unitOfMeasureAdmin)
 
-
+@admin.register(VAT)
 class VATAdmin(admin.ModelAdmin):
     list_display = ('name','rate')
     search_fields = ('name','rate')
-admin.site.register(VAT, VATAdmin)
+
 
 
 @admin.register(Return)

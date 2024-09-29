@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'manufactory',
     'HRM',
     'purchase',
+    'colorfield'
 ]
 
 MIDDLEWARE = [

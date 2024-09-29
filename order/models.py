@@ -2,7 +2,9 @@ from django.db import models
 from django.conf import settings
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
+from django.utils.safestring import mark_safe
 
+from production.models import Color
 from wms.models import Product, Stock  # Импортируем модель Material из вашего приложения wms
 class Customer(models.Model):
     """Клиент"""
@@ -25,6 +27,7 @@ class Order(models.Model):
 
     """Заказ клиента"""
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT, verbose_name="Клиент")
+    name = models.CharField('Названия', max_length=255)
     uuid = models.CharField("Номер заказа", max_length=50, blank=True)
     photo = models.ImageField("Фотография", upload_to='order_photos/', blank=True, null=True )
     order_date = models.DateTimeField("Дата заказа", auto_now_add=True)
@@ -85,7 +88,7 @@ class Order(models.Model):
     total_cost = models.DecimalField("Общая стоимость", max_digits=10, decimal_places=2, default=0, editable=False)
 
     def __str__(self):
-        return f"Заказ №{self.uuid} от {self.order_date.strftime('%d.%m.%Y')}"
+        return f"Заказ {self.uuid} от {self.order_date.strftime('%d.%m.%Y')}"
 
     def calculate_total_cost(self):
         """
@@ -97,12 +100,14 @@ class Order(models.Model):
             self.total_cost += order_item.product.cost_price * order_item.quantity
         self.save(update_fields=['total_cost'])
 
+
+
 class OrderItem(models.Model):
     """Позиция заказа"""
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='order_items')
     product = models.ForeignKey('production.ProductionItem', on_delete=models.PROTECT, verbose_name="Товар")
     quantity = models.PositiveIntegerField("Количество")
-    color = models.CharField("Цвет", max_length=50)
+    color = models.ForeignKey(Color, on_delete=models.PROTECT, verbose_name='Цвет')
     size = models.CharField("Размер", max_length=50)
     cost_price = models.DecimalField("Себестоимость", max_digits=10, decimal_places=2, default=0, editable=False)
 

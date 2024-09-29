@@ -94,8 +94,9 @@ class VAT(models.Model):
     class Meta:
         verbose_name = 'НДС'
         verbose_name_plural = 'НДС'
-    rate = models.DecimalField("Ставка НДС", max_digits=5, decimal_places=2)
     name = models.CharField("Название", max_length=50, blank=True)
+    rate = models.DecimalField("Ставка НДС", max_digits=5, decimal_places=2)
+
 
     def __str__(self):
         return self.name

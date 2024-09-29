@@ -1,3 +1,4 @@
+from colorfield.fields import ColorField
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.core.exceptions import ValidationError
@@ -6,6 +7,25 @@ from django.dispatch import receiver
 from django.db import transaction
 from wms.models import Product, Stock, Warehouse
 from django.db.models import Sum, F
+from django.utils.safestring import mark_safe
+
+class Color(models.Model):
+    class Meta:
+        verbose_name = 'Цвет'
+        verbose_name_plural = verbose_name
+
+    color = ColorField(default='#FF0000')
+    name = models.CharField('Названия', max_length=50)
+
+    def color_tag(self):
+        return mark_safe(
+            f'<div style="background-color: {self.color}; width: 30px; height: 30px; border-radius: 50%;"></div>')
+
+    color_tag.short_description = 'Цвет'
+
+    def __str__(self):
+        return self.name
+
 
 
 class ProductionItem(models.Model):
@@ -18,7 +38,7 @@ class ProductionItem(models.Model):
     article = models.CharField("Артикул", max_length=50, blank=True)
     design_description = models.TextField("Описание дизайна", blank=True)
     size = models.CharField(max_length=255, verbose_name="Размеры")
-    color = models.CharField("Цвет", max_length=50)
+    color = models.ManyToManyField(Color)
     batch_number = models.CharField("Номер партии", max_length=50, blank=True)
 
     # Себестоимость - теперь не редактируемое поле и свойство
@@ -56,7 +76,7 @@ class ProductionItem(models.Model):
         return self._cost_price
 
     def __str__(self):
-        return f"{self.name}, {self.size}, {self.color}"
+        return f"{self.name}, {self.size}, {self.color.name}"
 
 
 

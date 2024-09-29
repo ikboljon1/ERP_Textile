@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.utils.safestring import mark_safe
+
 from .models import Customer, Order, OrderItem
 # Register your models here.
 class OrderItemInline(admin.TabularInline):
@@ -8,10 +10,12 @@ class OrderItemInline(admin.TabularInline):
 class OrderAdmin(admin.ModelAdmin):
     list_display = (
         'uuid',
+        'name',
         'customer',
+        'get_photo',
         'order_date',
         'due_date',
-        'total_amount',
+        # 'total_amount',
         'status',
         'priority',
         'sales_channel',
@@ -25,6 +29,8 @@ class OrderAdmin(admin.ModelAdmin):
         'sales_channel',
     )
     search_fields = ('customer__name', 'uuid')
+
+
 
     fieldsets = (
         ('Основная информация', {
@@ -45,7 +51,10 @@ class OrderAdmin(admin.ModelAdmin):
     )
     inlines = [OrderItemInline]
 
+    def get_photo(self, obj):
+        return mark_safe(f'<img src={obj.photo.url} width="50" height="50"')
 
+    get_photo.short_description = 'Изображения'
 
 admin.site.register(Customer)
 admin.site.register(Order, OrderAdmin)

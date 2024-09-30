@@ -1,0 +1,35 @@
+{% extends 'base.html' %} {% block content %}
+<h1>Мониторинг производства по заказу {{ order.uuid }}</h1>
+
+<table>
+    <thead>
+        <tr>
+            <th>Позиция заказа</th>
+            <th>Операция</th>
+            <th>Произведено</th>
+            <th>Осталось</th>
+            <th>Прогресс</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for order_item in order.order_items.all %}
+        {% for operation in order_item.product.technological_map.operation.all %}
+        <tr>
+            <td>{{ order_item }}</td>
+            <td>{{ operation.operation.name }}</td>
+            <td>
+                {{ get_produced_quantity_for_order_operation(order_item, operation.operation) }}
+            </td>
+            <td>
+                {{ get_remaining_quantity_for_order_operation(order_item, operation.operation) }}
+            </td>
+            <td>
+                <div class="progress">
+                    <div class="progress-bar" role="progressbar" style="width: {{ get_produced_quantity_for_order_operation(order_item, operation.operation) / order_item.quantity * 100 }}%;" aria-valuenow="{{ get_produced_quantity_for_order_operation(order_item, operation.operation) }}" aria-valuemin="0" aria-valuemax="{{ order_item.quantity }}"></div>
+                </div>
+            </td>
+        </tr>
+        {% endfor %} {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

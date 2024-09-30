@@ -1,8 +1,17 @@
+from datetime import datetime
+
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin, GroupAdmin as BaseGroupAdmin
 from django.contrib.auth.models import Group
+from django.db.models import Sum
+from django.urls import reverse
+from django.utils.safestring import mark_safe
+
+from order.models import Order
 from .models import Role, Permission, Branch, Employee, Brigade, Sewing
 from django.contrib.contenttypes.models import ContentType
+from manufactory.models import OperationLog
+from manufactory.utils import calculate_piecework_salary
 
 
 class PermissionAdmin(admin.ModelAdmin):
@@ -73,6 +82,67 @@ class RoleAdmin(admin.ModelAdmin):
 
 admin.site.register(Brigade)
 
+
+# @admin.register(Sewing)
+# class SewingAdmin(admin.ModelAdmin):
+#     list_display = ('name', 'code', 'operations_info', 'calculated_salary')
+#     readonly_fields = ('operations_info', 'calculated_salary')
+#
+#     def operations_info(self, obj):
+#         """ Отображает список выполненных операций и их количество. """
+#         operations = OperationLog.objects.filter(employee=obj) \
+#             .values('operation__name', 'operation__piece_rate') \
+#             .annotate(total_quantity=Sum('quantity'))
+#
+#         info = ""
+#         for op in operations:
+#             info += f"Операция: {op['operation__name']}, "
+#             info += f"Ставка: {op['operation__piece_rate']} сом, "
+#             info += f"Количество: {op['total_quantity']}<br>"
+#         return info
+#
+#     operations_info.short_description = "Выполненные операции"
+#     operations_info.allow_tags = True
+#
+#     def calculated_salary(self, obj):
+#         """ Рассчитывает и отображает зарплату за текущий месяц.  """
+#         salary = calculate_piecework_salary(obj, 2023, 10)
+#         return f"{salary} сом"
+#
+#     calculated_salary.short_description = "Зарплата (текущий месяц)"
+
 @admin.register(Sewing)
 class SewingAdmin(admin.ModelAdmin):
-    list_display = ('name', 'code')
+    list_display = ('name', 'code', 'calculated_salary')
+    readonly_fields = ('operations_info', 'calculated_salary')
+
+    def operations_info(self, obj, order_id=None):
+        """ Отображает список выполненных операций и их количество для
+        выбранного заказа.
+        """
+        operations = OperationLog.objects.filter(employee=obj)
+        if order_id:
+            operations = operations.filter(assignment__order_id=order_id)
+        operations = operations.values('operation__operation__name', 'operation__piece_rate') \
+            .annotate(total_quantity=Sum('quantity'))
+
+        info = ""
+        for op in operations:
+            info += f"Операция: {op['operation__operation__name']}, "
+            info += f"Ставка: {op['operation__piece_rate']} сом, "
+            info += f"Количество: {op['total_quantity']}<br>"
+        return mark_safe(info)
+
+    def calculated_salary(self, obj):
+        """ Рассчитывает зарплату за текущий месяц.  """
+        now = datetime.now()
+        salary = calculate_piecework_salary(obj, now.year, now.month)
+        return f"{salary} сом"
+
+    calculated_salary.short_description = "Зарплата (текущий месяц)"
+
+    def changelist_view(self, request, extra_context=None):
+        """ Добавляем форму для выбора заказа и периода в список сотрудников """
+        extra_context = extra_context or {}
+        extra_context['orders'] = Order.objects.all()
+        return super().changelist_view(request, extra_context=extra_context)

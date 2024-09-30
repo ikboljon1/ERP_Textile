@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User, Group
-from django.db.models import CharField
+from django.db.models import CharField, Sum
 from django.utils import timezone
 from HRM.models import Employee, Brigade, Sewing
 from production.models import TechnologicalMap, Stage, TechnologicalMapOperation, TechnologicalMapMaterial, ProductionItem
@@ -67,8 +67,33 @@ class Cutting(models.Model):
 
     assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, verbose_name="Задание")
     order_item = models.ForeignKey(OrderItem, on_delete=models.CASCADE, verbose_name="Позиция заказа")
-    quantity = models.PositiveIntegerField('Количество')
+    quantity = models.PositiveIntegerField("Количество выкроенных изделий", default=0)
+    fabric_leftovers = models.DecimalField(
+         "Остатки ткани", max_digits=10, decimal_places=2, default=0,
+         help_text="Укажите количество остатков ткани после кроя"
+    )
+    fabric_waste = models.DecimalField(
+         "Отходы ткани", max_digits=10, decimal_places=2, default=0,
+          help_text="Укажите количество отходов ткани (брак)"
+    )
+    waste_reason = models.TextField("Причина отходов", blank=True)
+    start_time = models.DateTimeField("Время начала", auto_now_add=True)
+    end_time = models.DateTimeField("Время окончания", null=True, blank=True)
     map = models.CharField('Карта', max_length=255 )
+    status = models.CharField(
+        "Статус",
+        max_length=20,
+        choices=[
+            ("new", "Новое"),
+            ("in_progress", "В работе"),
+            ("completed", "Выполнено"),
+            ("paused", "Приостановлено"),
+        ],
+        default="new",
+    )
+
+    def __str__(self):
+        return f"Кройка по заданию {self.assignment.id},{self.order_item}{self.quantity}"
 
 
 
@@ -123,3 +148,14 @@ class  Defect(models.Model):
         verbose_name  =  "Брак"
         verbose_name_plural  =  "Брак"
 
+def get_produced_quantity_for_order_operation(order_item, operation):
+    """Возвращает общее количество произведенных изделий."""
+    return OperationLog.objects.filter(
+        order_item=order_item,
+        operation=operation
+    ).aggregate(total_quantity=Sum('quantity'))['total_quantity'] or 0
+
+def get_remaining_quantity_for_order_operation(order_item, operation):
+    """Возвращает количество оставшихся изделий."""
+    produced_quantity = get_produced_quantity_for_order_operation(order_item, operation)
+    return order_item.quantity - produced_quantity

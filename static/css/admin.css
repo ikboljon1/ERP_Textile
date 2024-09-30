@@ -1,0 +1,6 @@
+.actual_operations td,
+.actual_operations th,
+.material_consumption td,
+.material_consumption th {
+    padding: 10px !important;
+}

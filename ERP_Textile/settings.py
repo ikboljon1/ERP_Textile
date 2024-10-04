@@ -44,7 +44,9 @@ INSTALLED_APPS = [
     'manufactory',
     'HRM',
     'purchase',
-    'colorfield'
+    'colorfield',
+    # 'billing'
+    'accounting'
 ]
 
 MIDDLEWARE = [

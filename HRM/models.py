@@ -50,14 +50,14 @@ class Employee(AbstractUser):
     position = models.CharField("Должность", max_length=100)
     hire_date = models.DateField("Дата приема на работу", null=True, blank=True)
     PAYMENT_TYPE_CHOICES = [
-        ('piecework', 'Сдельная'),
-        ('salary', 'Повременная'),
+        ('piecework', 'Сдельная оплата'),
+        ('salary', 'Фиксированный оклад'),
     ]
     payment_type = models.CharField(
         "Тип оплаты труда",
         max_length=20,
         choices=PAYMENT_TYPE_CHOICES,
-        default='piecework'
+        default='salary'
     )
     hourly_rate = models.DecimalField(
         "Почасовая ставка",

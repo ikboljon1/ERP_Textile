@@ -1,8 +1,14 @@
 from django.db import models
 from django.core.validators import MinValueValidator
+from django.db.models import Sum, F
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.db import transaction
+
+from ERP_Textile import settings
+from HRM.models import Employee
+
+
 # Create your models here.
 class ProductCategory(models.Model):
     """Категория товаров"""
@@ -183,3 +189,79 @@ class Return(models.Model):
     def __str__(self):
         return f"Возврат товара {self.receipt_item.product.name} от {self.return_date} (поступление №{self.receipt_item.receipt.receipt_number})"
 
+class POSOrder(models.Model):
+    """ Заказ POS """
+    order_date = models.DateTimeField("Дата заказа", auto_now_add=True)
+    completed = models.BooleanField("Завершен", default=False)
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT, verbose_name="Склад")
+    total_amount = models.DecimalField("Итого", max_digits=10, decimal_places=2, default=0)
+
+    class Meta:
+        verbose_name = 'Заказ POS'
+        verbose_name_plural = 'Заказы POS'
+
+    class Meta:
+        verbose_name = 'Заказ POS'
+        verbose_name_plural = 'Заказы POS'
+
+    def init(self, *args, **kwargs):
+        super().init(*args, **kwargs)
+        self._original_completed = self.completed
+
+    def str(self):
+        return f"Заказ POS №{self.id} от {self.order_date.strftime('%d.%m.%Y %H:%M')}"
+
+    def calculate_total_amount(self):
+        """ Вычисляет общую сумму заказа """
+        self.total_amount = self.items.aggregate(total=Sum(F('quantity') * F('price')))['total'] or 0
+        self.save()
+
+    def complete_order(self):
+        """ Помечает заказ как завершенный и списывает товары со склада. """
+        if not self.completed:
+            self.completed = True
+            self.save()
+            self.update_stock()
+
+    def update_stock(self):
+        """Списывает товары со склада."""
+        if self.completed:
+            for item in self.items.all():
+                try:
+                    stock = Stock.objects.get(product=item.product, warehouse=self.warehouse)
+                    if stock.quantity >= item.quantity:
+                        stock.quantity -= item.quantity
+                        stock.save()
+                    else:
+                        # Обработка случая, когда товара недостаточно
+                        raise ValueError(f"На складе {self.warehouse.name} не хватает товара {item.product.name}")
+                except Stock.DoesNotExist:
+                    raise ValueError(f"Товар {item.product.name} не найден на складе {self.warehouse.name}")
+
+    def str(self):
+        return f"Заказ POS №{self.id} от {self.order_date.strftime('%d.%m.%Y %H:%M')}"
+
+class POSOrderItem(models.Model):
+    """ Позиция заказа POS """
+    order = models.ForeignKey(POSOrder, on_delete=models.CASCADE, related_name="items", verbose_name="Заказ")
+    category = models.ForeignKey(ProductCategory, on_delete=models.CASCADE, verbose_name='Категория')
+    product = models.ForeignKey(Product, on_delete=models.PROTECT, verbose_name="Товар")
+    quantity = models.DecimalField("Количество", max_digits=10, decimal_places=2, default=1)
+    price = models.DecimalField("Цена", max_digits=10, decimal_places=2, editable=False)
+
+    class Meta:
+        verbose_name = 'Позиция заказа POS'
+        verbose_name_plural = 'Позиции заказов POS'
+
+    def str(self):
+        return f"{self.product.name} - {self.quantity} x {self.price}"
+
+class POSCart(models.Model):
+    session_key = models.CharField(max_length=40, null=True, blank=True)  # Для анонимных пользователей
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)  # Для авторизованных пользователей
+    created_at = models.DateTimeField(auto_now_add=True)
+
+class POSCartItem(models.Model):
+    cart = models.ForeignKey(POSCart, on_delete=models.CASCADE, related_name='items')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.DecimalField(max_digits=10, decimal_places=2, default=1)

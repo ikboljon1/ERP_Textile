@@ -2,7 +2,8 @@ from django.contrib import admin
 from django.db.models import Sum
 from django import forms
 # Register your models here.
-from wms.models import Product, Supplier, Warehouse, Receipt, ReceiptItem, Moving, VAT, Stock, ProductCategory, UnitOfMeasure, Return
+from wms.models import Product, Supplier, Warehouse, Receipt, ReceiptItem, Moving, VAT, Stock, ProductCategory, \
+    UnitOfMeasure, Return, POSOrderItem, POSOrder
 
 
 @admin.register(Product)
@@ -91,8 +92,8 @@ class ReturnAdmin(admin.ModelAdmin):
     get_product.short_description = 'Товар'
     get_product.admin_order_field = 'receipt_item__product'
 
-
-
+admin.site.register(POSOrderItem)
+admin.site.register(POSOrder)
 # class StockAdmin(admin.ModelAdmin):
 #     list_display = ('warehouse','material','quantity')
 #     search_fields = ('warehouse','material','quantity')

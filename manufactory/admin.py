@@ -57,22 +57,39 @@ class AssignmentAdmin(admin.ModelAdmin):
     cutting_info.short_description = "Информация о крое"
 
     def actual_operations(self, obj):
-        operations_data = obj.get_actual_operations_data()
-        planned_operations_data = obj.get_planned_operations_data()
+        html = "<table>"
+        html += "<tr><th>Позиция заказа</th><th>Операция</th><th>План</th><th>Факт</th><th>Осталось</th></tr>"
 
-        if operations_data:
-            html = "<table><tr><th>Операция</th><th>План</th><th>Факт</th><th>Осталось</th></tr>"
-            for op_data in operations_data:
-                operation_name = op_data['operation']
-                planned_quantity = next((item['planned_quantity'] for item in planned_operations_data if
-                                         item['operation'].operation.name == operation_name), 0)
-                remaining_quantity = planned_quantity - op_data['completed_quantity']
-                html += f"<tr><td>{operation_name}</td><td>{planned_quantity}</td><td>{op_data['completed_quantity']}</td><td>{remaining_quantity}</td></tr>"
-            html += "</table>"
-            return mark_safe(html)
-        return '-'
+        for order_item in obj.order.order_items.all():  # Проходим по каждой позиции заказа
+            operations_data = obj.operationlog_set.filter(order_item=order_item).values(
+                'operation__operation__name',
+                'order_item__size',
+            ).annotate(completed_quantity=Sum('quantity'))
 
-    actual_operations.short_description = "Операции (план/факт)"  # Изменили описание
+            planned_operations_data = order_item.product.technological_map.operation.all() if hasattr(
+                order_item.product, 'technological_map') else []
+
+            for planned_op in planned_operations_data:
+                actual_op = next((op for op in operations_data if
+                                  op['operation__operation__name'] == planned_op.operation.name and
+                                  op['order_item__size'] == order_item.size), None)
+
+                planned_quantity = planned_op.details_quantity_per_product * order_item.quantity
+                completed_quantity = actual_op['completed_quantity'] if actual_op else 0
+                remaining_quantity = planned_quantity - completed_quantity
+
+                html += f"<tr>"
+                html += f"<td>{order_item}</td>"  # Позиция заказа
+                html += f"<td>{planned_op.operation.name}</td>"  # Операция
+                html += f"<td>{planned_quantity}</td>"  # План
+                html += f"<td>{completed_quantity}</td>"  # Факт
+                html += f"<td>{remaining_quantity}</td>"  # Осталось
+                html += f"</tr>"
+
+        html += "</table>"
+        return mark_safe(html)
+
+    actual_operations.short_description = "Операции по позициям заказа (план/факт)"
 
 
     def material_consumption(self, obj):

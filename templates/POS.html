@@ -1,0 +1,476 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    {% load static %}
+  <title>POS Терминал</title>
+  <link crossorigin="anonymous" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" rel="stylesheet"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/pos.css"/>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="{% static '' %}"></script>
+  <style>
+    /* ... Ваши стили ... */
+ </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">POS</a>
+    </div>
+  </nav>
+  <!--  -->
+  <div class="container-fluid">
+    <div class="row">
+      <!-- Product List -->
+      <div class="col-md-8">
+        <div class="row search-bar">
+            
+              <div class="col-md-6">
+                  <div class="input-group">
+                <input class="form-control" id="product-search" placeholder="Поиск товара..." type="text" />
+                  <button class="btn btn-primary" type="button">
+                    <i class="fas fa-search">
+                    </i>
+                   </button>
+                  </div>
+              </div>
+          <div class="col-md-6">
+            <input class="form-control" id="barcode-scanner" placeholder="Сканировать штрих-код" type="text" />
+          </div>
+        </div>
+      <br>  
+        <div class="row">
+          <div class="col-12">
+            <button class="btn btn-outline-secondary category-btn" data-category-id="all">
+              Все категории
+            </button>
+            {% for category in categories %}
+              <button class="btn btn-outline-secondary category-btn" data-category-id="{{ category.id }}">
+                {{ category.name }}
+              </button>
+            {% endfor %}
+          </div>
+        </div>
+        <br>
+        <div class="row" id="product-list">
+          {% for product in products %}
+            <div class="col-md-3">
+                <div class="product-card" data-product-id="{{ product.id }}" data-product-name="{{ product.name }}" data-product-price="{{ product.selling_price }}">
+                    <img alt="{{ product.name }}" height="200" src="{% if product.photo %}{{ product.photo.url }}{% else %}https://via.placeholder.com/150{% endif %}" width="150" />
+                    <h5>{{ product.name }}</h5>
+                    <p>{{ product.barcode }}</p>
+                    <span class="badge bg-danger">{{ product.quantity }}</span>
+                    <p class="price">{{ product.selling_price }}</p>
+                </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+      <!-- Cart -->
+      <div class="col-md-4">
+        <table class="table table-bordered cart-table" id="cart-table">
+          <thead>
+            <tr>
+              <th>Название</th>
+              <th>Количество</th>
+              <th>Цена</th>
+              <th>Сумма</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in current_sale.items.all %}
+              <tr data-item-id="{{ item.id }}">
+                <td>
+                  <img alt="{{ item.product.name }}" class="img-thumbnail" height="50"
+                    src="{% if item.product.photo %}{{ item.product.photo.url }}{% else %}https://via.placeholder.com/50{% endif %}"
+                    width="50" />
+                  {{ item.product.name }}
+                </td>
+                <td>
+                  <div class="input-group">
+                    <button class="btn btn-outline-secondary btn-sm decrease-quantity"
+                      data-item-id="{{ item.id }}">-</button>
+                    <input type="text" class="form-control form-control-sm quantity-input"
+                      data-item-id="{{ item.id }}" value="{{ item.quantity }}">
+                    <button class="btn btn-outline-secondary btn-sm increase-quantity"
+                      data-item-id="{{ item.id }}">+</button>
+                  </div>
+                </td>
+                <td>{{ item.price }}</td>
+                <td class="item-total-price">{{ item.total_price }}</td>
+                <td>
+                  <button class="btn btn-danger btn-sm delete-item" data-item-id="{{ item.id }}">
+                    <i class="fas fa-trash-alt"></i>
+                  </button>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <div class="cart-summary">
+          <div class="mb-3">
+            <label for="discountInput" class="form-label">Скидка (%)</label>
+            <input type="number" class="form-control" id="discountInput" placeholder="Введите скидку" value="{{ current_sale.discount }}">
+          </div>
+          <p>Подытог: <span id="sale-subtotal">{{ current_sale.subtotal }}</span></p>
+          <p>Итого: <span id="sale-total">{{ current_sale.total_amount }}</span></p>
+          <button class="btn btn-success complete-sale">Оплатить</button>
+          <button class="btn btn-danger">Очистить корзину</button>
+        </div>
+      </div>
+    </div>
+  </div>
+<script>
+    $(document).ready(function() {
+  console.log("JavaScript loaded and running!");
+
+  // --- Helper Functions (unchanged) ---
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  function csrfSafeMethod(method) {
+    return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+  }
+
+  $.ajaxSetup({
+    beforeSend: function(xhr, settings) {
+      if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+        xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+      }
+    }
+  });
+
+  // --- Cart Functions ---
+  function addItemToCart(productId, quantity = 1) {
+    console.log("addItemToCart called with productId:", productId);
+    $.ajax({
+      url: '{% url "wms:add_item_to_sale" %}',
+      type: 'POST',
+      data: {
+        'product_id': productId,
+        'quantity': quantity
+      },
+      dataType: 'json',
+      success: function(data) {
+        console.log("addItemToCart success:", data);
+        if (data.success) {
+          updateCartTable(data);
+          updateCartSummary();
+        } else {
+          alert(data.error);
+        }
+      },
+      error: function(xhr, status, error) {
+        console.error("addItemToCart error:", error);
+        alert('Произошла ошибка при добавлении товара.');
+      }
+    });
+  }
+
+  function updateCartItemQuantity(itemId, quantity) {
+    console.log("updateCartItemQuantity called with itemId:", itemId, "quantity:", quantity);
+    $.ajax({
+      url: '{% url "wms:update_sale_item_quantity" %}',
+      type: 'POST',
+      data: {
+        'item_id': itemId,
+        'quantity': quantity
+      },
+      dataType: 'json',
+      success: function(data) {
+        console.log("updateCartItemQuantity success:", data);
+        if (data.success) {
+          updateCartTable(data);
+          updateCartSummary();
+        } else {
+          alert(data.error);
+        }
+      },
+      error: function(xhr, status, error) {
+        console.error("updateCartItemQuantity error:", error);
+        alert('Произошла ошибка при обновлении количества товара.');
+      }
+    });
+  }
+
+  function deleteCartItem(itemId) {
+    console.log("deleteCartItem called with itemId:", itemId);
+    $.ajax({
+      url: '{% url "wms:delete_sale_item" %}',
+      type: 'POST',
+      data: {
+        'item_id': itemId
+      },
+      dataType: 'json',
+      success: function(data) {
+        console.log("deleteCartItem success:", data);
+        if (data.success) {
+          updateCartTable(data);
+          updateCartSummary();
+        } else {
+          alert(data.error);
+        }
+      },
+      error: function(xhr, status, error) {
+        console.error("deleteCartItem error:", error);
+        alert('Произошла ошибка при удалении товара.');
+      }
+    });
+  }
+
+  function updateCartTable(data) {
+    console.log("updateCartTable called with data:", data);
+    var $cartTable = $('#cart-table tbody');
+    $cartTable.empty();
+
+    if (data.cart_items && data.cart_items.length > 0) {
+      data.cart_items.forEach(function(item) {
+        var total = (parseFloat(item.quantity) * parseFloat(item.product__selling_price)).toFixed(2);
+        var newRow = `
+          <tr data-item-id="${item.product__id}">
+            <td>${item.product__name}</td>
+            <td>
+              <div class="input-group">
+                <button class="btn btn-outline-secondary btn-sm decrease-quantity" data-item-id="${item.product__id}">-</button>
+                <input type="number" min="1" class="form-control form-control-sm quantity-input" data-item-id="${item.product__id}" value="${item.quantity}">
+                <button class="btn btn-outline-secondary btn-sm increase-quantity" data-item-id="${item.product__id}">+</button>
+              </div>
+            </td>
+            <td class="item-price">${item.product__selling_price}</td>
+            <td class="item-total">${total}</td>
+            <td>
+              <button class="btn btn-danger btn-sm delete-item" data-item-id="${item.product__id}">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+        $cartTable.append(newRow);
+      });
+    } else {
+      // Корзина пуста
+      $cartTable.append('<tr><td colspan="5" class="text-center">Корзина пуста</td></tr>');
+    }
+  }
+      //  Уменьшение  количества
+    $('#cart-table').on('click', '.decrease-quantity', function() {
+      var itemId = $(this).data('item-id');
+      var $quantityInput = $(this).siblings('.quantity-input');
+      var quantity = parseInt($quantityInput.val());
+    
+      if (quantity > 1) {
+        //  Обновляем  количество  на  сервере
+        updateCartItemQuantity(itemId, quantity - 1);
+      }
+    });
+    
+    //  Функция  для  обновления  количества  товара  в  корзине
+    function updateCartItemQuantity(itemId, quantity) {
+      $.ajax({
+        url: '{% url "wms:update_sale_item_quantity" %}',
+        type: 'POST',
+        data: {
+          'item_id': itemId,
+          'quantity': quantity
+        },
+        dataType: 'json',
+        success: function(data) {
+          if (data.success) {
+            //  Обновляем  отображение  в  корзине
+            var $row = $('#cart-table tbody tr[data-item-id="' + itemId + '"]'); 
+            $row.find('.quantity-input').val(quantity); //  Обновляем  поле  количества
+            $row.find('.item-total-price').text(data.new_total_price);  //  Обновляем  сумму  в  строке
+    
+            //  Обновляем  общую  сумму
+            updateSaleTotal(); 
+          } else {
+            alert(data.error);
+          }
+        },
+        error: function() {
+          alert('Произошла  ошибка  при  обновлении  количества.'); 
+        }
+      });
+    }
+  function updateCartSummary() {
+    var subtotal = 0;
+    $('.item-total').each(function() {
+      subtotal += parseFloat($(this).text());
+    });
+    $('#sale-subtotal').text(subtotal.toFixed(2));
+
+    var discount = parseFloat($('#discountInput').val()) || 0;
+    var total = subtotal * (1 - discount / 100);
+    $('#sale-total').text(total.toFixed(2));
+  }
+
+  // --- Event Handlers ---
+  // Adding product
+  $('#product-list').on('click', '.product-card', function() {
+    var productId = $(this).data('product-id');
+    console.log("Click on product card with ID:", productId);
+    addItemToCart(productId);
+  });
+
+  // Decreasing quantity
+  $('#cart-table').on('click', '.decrease-quantity', function() {
+    var itemId = $(this).data('item-id');
+    var $quantityInput = $(this).siblings('.quantity-input');
+    var quantity = parseInt($quantityInput.val());
+    if (quantity > 1) {
+      updateCartItemQuantity(itemId, quantity - 1);
+    }
+  });
+
+  // Increasing quantity
+  $('#cart-table').on('click', '.increase-quantity', function() {
+    var itemId = $(this).data('item-id');
+    var $quantityInput = $(this).siblings('.quantity-input');
+    var quantity = parseInt($quantityInput.val());
+    updateCartItemQuantity(itemId, quantity + 1);
+  });
+
+  // Deleting product
+  $('#cart-table').on('click', '.delete-item', function() {
+    var itemId = $(this).data('item-id');
+    deleteCartItem(itemId);
+  });
+
+  // Updating total amount
+  $('#discountInput').on('input', function() {
+    updateCartSummary();
+  });
+
+  // Completing sale
+  $('.complete-sale').on('click', function() {
+    var selectedWarehouseId = $('#warehouse-select').val();
+
+    $.ajax({
+      url: '{% url "wms:complete_sale" %}',
+      type: 'POST',
+      data: {
+        'warehouse_id': selectedWarehouseId
+      },
+      dataType: 'json',
+      success: function(data) {
+        if (data.success) {
+          // Очищаем корзину
+          updateCartTable({'cart_items': []});
+          updateCartSummary();
+
+          alert('Продажа успешно завершена!');
+        } else {
+          alert(data.error);
+        }
+      },
+      error: function() {
+        alert('Произошла ошибка при завершении продажи.');
+      }
+    });
+  });
+
+  // Clearing cart
+  $('.btn-danger').not('.delete-item').on('click', function() { 
+    $.ajax({
+      url: '{% url "wms:empty_cart" %}',
+      type: 'POST',
+      dataType: 'json',
+      success: function(data) {
+        if (data.success) {
+          updateCartTable({'cart_items': []});
+          updateCartSummary();
+        } else {
+          alert(data.error);
+        }
+      },
+      error: function() {
+        alert('Произошла ошибка при очистке корзины.');
+      }
+    });
+  });
+
+  // --- Search ---
+  $('#product-search-button').on('click', function() {
+    var searchQuery = $('#product-search').val();
+    console.log("Searching for:", searchQuery);
+    searchProducts(searchQuery);
+  });
+
+  // Search by barcode scanner
+  $('#barcode-scanner').on('input', function() {
+    var barcode = $(this).val();
+    searchProducts(barcode, 'barcode');
+  });
+
+  function searchProducts(query, searchBy = 'name') {
+    console.log("searchProducts called with query:", query, "searchBy:", searchBy);
+    $.ajax({
+      url: '{% url "wms:search_products" %}',
+      type: 'GET',
+      data: {
+        'q': query,
+        'search_by': searchBy
+      },
+      dataType: 'json',
+      success: function(data) {
+        console.log("searchProducts success:", data);
+        if (data.products && data.products.length > 0) { //  Проверка  на  наличие  data.products
+          // Updating product display
+          var $productsContainer = $('#product-list');
+          $productsContainer.empty();
+          data.products.forEach(function(product) {
+            var newProductCard = `
+              <div class="col-md-3">
+                <div class="product-card" data-product-id="${product.id}" data-product-name="${product.name}" data-product-price="${product.selling_price}">
+                  <img alt="${product.name}" height="200" src="${product.photo || 'https://via.placeholder.com/150'}" width="150"/>
+                  <h5>${product.name}</h5>
+                  <p>${product.barcode}</p> 
+                  <span class="badge bg-danger">${product.quantity || 0}</span> 
+                  <p class="price">${product.selling_price}</p> 
+                </div>
+              </div>
+            `;
+            $productsContainer.append(newProductCard);
+          });
+
+        } else {
+          // Nothing found
+          $('#product-list').html('<div class="col-12"><p>Товаров не найдено</p></div>');
+        }
+      },
+      error: function(xhr, status, error) {
+        console.error("searchProducts error:", error);
+        alert('Произошла ошибка при поиске товаров.');
+      }
+    });
+  }
+
+  // --- Barcode Scanner Emulation (for testing) ---
+  $(document).on('keypress', function(e) {
+    if (e.which === 13) { // Enter key
+      var barcode = $('#barcode-scanner').val();
+      if (barcode) {
+        searchProducts(barcode, 'barcode');
+        $('#barcode-scanner').val('');
+      }
+    }
+  });
+});    
+</script>
+</body>
+</html>

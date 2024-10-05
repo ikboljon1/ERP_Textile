@@ -7,6 +7,7 @@ from django.db import transaction
 
 from ERP_Textile import settings
 from HRM.models import Employee
+from CRM.models import Counterparty
 
 
 # Create your models here.
@@ -80,22 +81,22 @@ class Warehouse(models.Model):
     def __str__(self):
         return self.name
 
-class Supplier(models.Model):
-    class Meta:
-        verbose_name = 'Поставщик'
-        verbose_name_plural = 'Поставщик'
-
-    """Модель для хранения информации о поставщиках"""
-    name = models.CharField("Название", max_length=255, unique=True)
-    inn = models.CharField("ИНН", max_length=20, blank=True)
-    address = models.TextField("Адрес", blank=True)
-    phone = models.CharField("Телефон", max_length=20, blank=True)
-    email = models.EmailField("Email", blank=True)
-    contact_name = models.CharField("Контактное лицо", max_length=255, blank=True)
-    description = models.TextField("Комментарий", blank=True)
-
-    def __str__(self):
-        return self.name
+# class Supplier(models.Model):
+#     class Meta:
+#         verbose_name = 'Поставщик'
+#         verbose_name_plural = 'Поставщик'
+#
+#     """Модель для хранения информации о поставщиках"""
+#     name = models.CharField("Название", max_length=255, unique=True)
+#     inn = models.CharField("ИНН", max_length=20, blank=True)
+#     address = models.TextField("Адрес", blank=True)
+#     phone = models.CharField("Телефон", max_length=20, blank=True)
+#     email = models.EmailField("Email", blank=True)
+#     contact_name = models.CharField("Контактное лицо", max_length=255, blank=True)
+#     description = models.TextField("Комментарий", blank=True)
+#
+#     def __str__(self):
+#         return self.name
 class VAT(models.Model):
     class Meta:
         verbose_name = 'НДС'
@@ -108,16 +109,12 @@ class VAT(models.Model):
         return self.name
 
 
-from django.db import models
-from .models import Product, ProductCategory, UnitOfMeasure, Supplier, Warehouse, VAT
-
-
 class Receipt(models.Model):
     """ Модель для общего поступления товаров/материалов """
 
     receipt_number = models.CharField("Номер поступления", max_length=50, unique=True, help_text="Уникальный номер поступления")
     receipt_date = models.DateTimeField("Дата поступления",auto_now_add=True)
-    supplier = models.ForeignKey(Supplier,on_delete=models.PROTECT,verbose_name="Поставщик")
+    supplier = models.ForeignKey(Counterparty,on_delete=models.PROTECT,verbose_name="Поставщик")
     warehouse = models.ForeignKey(Warehouse,on_delete=models.PROTECT,verbose_name="Склад")
     vat = models.ForeignKey(VAT,on_delete=models.SET_NULL,null=True,blank=True,verbose_name="НДС")
     transport_costs = models.DecimalField("Транспортные расходы", max_digits=10, decimal_places=2, default=0, null=True,blank=True)

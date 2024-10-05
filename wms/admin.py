@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.db.models import Sum
 from django import forms
 # Register your models here.
-from wms.models import Product, Supplier, Warehouse, Receipt, ReceiptItem, Moving, VAT, Stock, ProductCategory, \
+from wms.models import Product, Warehouse, Receipt, ReceiptItem, Moving, VAT, Stock, ProductCategory, \
     UnitOfMeasure, Return, POSOrderItem, POSOrder
 
 
@@ -55,10 +55,10 @@ class  ReceiptAdmin(admin.ModelAdmin):
 admin.site.register(Receipt, ReceiptAdmin)
 
 
-class SupplierAdmin(admin.ModelAdmin):
-    list_display = ('name','inn', 'address','email', 'phone')
-    search_fields = ('name','inn', 'address','email', 'phone')
-admin.site.register(Supplier, SupplierAdmin)
+# class SupplierAdmin(admin.ModelAdmin):
+#     list_display = ('name','inn', 'address','email', 'phone')
+#     search_fields = ('name','inn', 'address','email', 'phone')
+# admin.site.register(Supplier, SupplierAdmin)
 
 class MovingAdmin(admin.ModelAdmin):
     list_display = ('product','warehouse_from_where','warehouse_where','quantity','move_date')

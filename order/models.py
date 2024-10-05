@@ -4,21 +4,23 @@ from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 from django.utils.safestring import mark_safe
 
+from CRM.models import Counterparty
 from production.models import Color
 from wms.models import Product, Stock  # Импортируем модель Material из вашего приложения wms
-class Customer(models.Model):
-    """Клиент"""
-    name = models.CharField("Название", max_length=255)
-    address = models.TextField("Адрес", blank=True)
-    phone = models.CharField("Телефон", max_length=20, blank=True)
-    email = models.EmailField("Email", blank=True)
 
-    class Meta:
-        verbose_name = 'Клиент'
-        verbose_name_plural = verbose_name
-
-    def __str__(self):
-        return self.name
+# class Customer(models.Model):
+#     """Клиент"""
+#     name = models.CharField("Название", max_length=255)
+#     address = models.TextField("Адрес", blank=True)
+#     phone = models.CharField("Телефон", max_length=20, blank=True)
+#     email = models.EmailField("Email", blank=True)
+#
+#     class Meta:
+#         verbose_name = 'Клиент'
+#         verbose_name_plural = verbose_name
+#
+#     def __str__(self):
+#         return self.name
 
 class Order(models.Model):
     class Meta:
@@ -26,7 +28,7 @@ class Order(models.Model):
         verbose_name_plural = verbose_name
 
     """Заказ клиента"""
-    customer = models.ForeignKey(Customer, on_delete=models.PROTECT, verbose_name="Клиент")
+    customer = models.ForeignKey(Counterparty, on_delete=models.PROTECT, verbose_name="Клиент")
     name = models.CharField('Названия', max_length=255)
     uuid = models.CharField("Номер заказа", max_length=50, blank=True)
     photo = models.ImageField("Фотография", upload_to='order_photos/', blank=True, null=True )

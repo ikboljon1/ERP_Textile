@@ -29,7 +29,7 @@ class TransactionTypeAdmin(admin.ModelAdmin):
 
 @admin.register(Account)
 class AccountAdmin(admin.ModelAdmin):
-    list_display = ('code', 'name', 'account_type', 'parent_account')
+    list_display = ('code', 'name', 'account_type', 'currency_type','balance')
     list_filter = ('account_type', 'parent_account')
     search_fields = ('code', 'name')
 
@@ -57,6 +57,9 @@ class ExpenseAdmin(admin.ModelAdmin):
     list_display = ('account', 'operation', 'amount')
     list_filter = ('account', 'operation')  # Фильтрация по счету и операции
     search_fields = ('operation__name',)  # Поиск по названию операции
+    def has_change_permission(self, request, obj=None):
+        """Запрещаем редактирование записей."""
+        return False
 
 
 @admin.register(WriteOff)
@@ -64,12 +67,18 @@ class WriteOffAdmin(admin.ModelAdmin):
     list_display = ('transaction_type', 'product', 'warehouse', 'quantity')
     list_filter = ('transaction_type', 'product', 'warehouse')
     search_fields = ('product__name', 'warehouse__name')  # Поиск по названию товара и склада
+    def has_change_permission(self, request, obj=None):
+        """Запрещаем редактирование записей."""
+        return False
 
 @admin.register(Purchase)
 class PurchaseAdmin(admin.ModelAdmin):
     list_display = ('account', 'transaction_type', 'quantity', 'amount')
     list_filter = ('account', 'transaction_type')
     search_fields = ('transaction_type__name',)
+    def has_change_permission(self, request, obj=None):
+        """Запрещаем редактирование записей."""
+        return False
 
 # @admin.register(Payroll)
 # class PayrollAdmin(admin.ModelAdmin):

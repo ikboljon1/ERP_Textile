@@ -9,6 +9,13 @@ from ERP_Textile import settings
 from HRM.models import Employee
 from CRM.models import Counterparty
 
+class Currency(models.TextChoices):
+    USD = 'USD', 'USD'
+    EUR = 'EUR', 'EUR'
+    KGS = 'KGS', 'KGS'
+    UZS = 'UZS', 'UZS'
+    RUB = 'RUB', 'RUB'
+    KZT = 'KZT', 'KZT'
 
 # Create your models here.
 class ProductCategory(models.Model):
@@ -81,22 +88,6 @@ class Warehouse(models.Model):
     def __str__(self):
         return self.name
 
-# class Supplier(models.Model):
-#     class Meta:
-#         verbose_name = 'Поставщик'
-#         verbose_name_plural = 'Поставщик'
-#
-#     """Модель для хранения информации о поставщиках"""
-#     name = models.CharField("Название", max_length=255, unique=True)
-#     inn = models.CharField("ИНН", max_length=20, blank=True)
-#     address = models.TextField("Адрес", blank=True)
-#     phone = models.CharField("Телефон", max_length=20, blank=True)
-#     email = models.EmailField("Email", blank=True)
-#     contact_name = models.CharField("Контактное лицо", max_length=255, blank=True)
-#     description = models.TextField("Комментарий", blank=True)
-#
-#     def __str__(self):
-#         return self.name
 class VAT(models.Model):
     class Meta:
         verbose_name = 'НДС'
@@ -119,7 +110,8 @@ class Receipt(models.Model):
     vat = models.ForeignKey(VAT,on_delete=models.SET_NULL,null=True,blank=True,verbose_name="НДС")
     transport_costs = models.DecimalField("Транспортные расходы", max_digits=10, decimal_places=2, default=0, null=True,blank=True)
     other_costs = models.DecimalField("Прочие расходы", max_digits=10, decimal_places=2, default=0)
-    purchase_currency = models.CharField("Валюта покупки", max_length=3, default="USD")
+    account_type = models.CharField("Валюта счета", max_length=20,
+                                    choices=Currency.choices, default=Currency.USD)
 
     class Meta:
         verbose_name = "Поступление"

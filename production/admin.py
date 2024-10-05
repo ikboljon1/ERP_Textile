@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.utils.safestring import mark_safe
+
 from .models import (
     ProductionItem,
     TechnologicalMap,
@@ -19,9 +21,13 @@ class ColorAdmin(admin.ModelAdmin):
 
 @admin.register(ProductionItem)
 class ProductionItemAdmin(admin.ModelAdmin):
-    list_display = ( 'name', 'article', 'design_description', 'size',  'batch_number', 'cost_price')
+    list_display = ( 'name','get_photo','article', 'design_description', 'size',  'batch_number', 'cost_price')
     search_fields = ('name', 'article', 'batch_number')
 
+    def get_photo(self, obj):
+        return mark_safe(f'<img src={obj.image.url} width="50"')
+
+    get_photo.short_description = 'Изображения'
 
 # @admin.register(TechnologicalMap)
 # class TechnologicalMapAdmin(admin.ModelAdmin):
@@ -31,7 +37,7 @@ class ProductionItemAdmin(admin.ModelAdmin):
 @admin.register(Stage)
 class StageAdmin(admin.ModelAdmin):
     list_display = ('name',  'order')
-    search_fields = ('name',)
+    search_fields = ('name', 'order')
 
 @admin.register(Operation)
 class OperationAdmin(admin.ModelAdmin):

@@ -4,7 +4,8 @@ from django.utils.safestring import mark_safe
 
 from manufactory.models import OperationLog
 from order.models import Order
-from .models import Account, Counterparty, Document, Transaction, TransactionLine, Payroll
+from .models import Account, Counterparty, Document, Transaction, TransactionLine, Payroll, Operation, Expense, \
+    WriteOff, Purchase
 
 
 class TransactionLineInline(admin.TabularInline):
@@ -41,6 +42,30 @@ class DocumentAdmin(admin.ModelAdmin):
     search_fields = ('number', 'counterparty__name')
 
 # admin.site.register(TransactionLine)  # TransactionLine редактируется через Transaction
+@admin.register(Operation)
+class OperationAdmin(admin.ModelAdmin):
+    list_display = ('account', 'name')
+    list_filter = ('account',)  # Фильтрация по счету
+    search_fields = ('name',)
+
+@admin.register(Expense)
+class ExpenseAdmin(admin.ModelAdmin):
+    list_display = ('account', 'operation', 'amount')
+    list_filter = ('account', 'operation')  # Фильтрация по счету и операции
+    search_fields = ('operation__name',)  # Поиск по названию операции
+
+
+@admin.register(WriteOff)
+class WriteOffAdmin(admin.ModelAdmin):
+    list_display = ('account', 'product', 'warehouse', 'quantity')
+    list_filter = ('account', 'product', 'warehouse')
+    search_fields = ('product__name', 'warehouse__name')  # Поиск по названию товара и склада
+
+@admin.register(Purchase)
+class PurchaseAdmin(admin.ModelAdmin):
+    list_display = ('account', 'operation', 'quantity', 'amount')
+    list_filter = ('account', 'operation')
+    search_fields = ('operation__name',)
 
 @admin.register(Payroll)
 class PayrollAdmin(admin.ModelAdmin):

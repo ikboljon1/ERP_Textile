@@ -35,6 +35,7 @@ class ProductionItem(models.Model):
 
     """ Изделие в заказе на производство """
     name = models.CharField("Название", max_length=255)
+    image = models.ImageField('Фотография', upload_to='product_images/',blank=True, null=True)
     article = models.CharField("Артикул", max_length=50, blank=True)
     design_description = models.TextField("Описание дизайна", blank=True)
     size = models.CharField(max_length=255, verbose_name="Размеры")
@@ -43,6 +44,7 @@ class ProductionItem(models.Model):
 
     # Себестоимость - теперь не редактируемое поле и свойство
     _cost_price = models.DecimalField("Себестоимость", max_digits=10, decimal_places=2, default=0, editable=False)
+
 
     @property
     def cost_price(self):

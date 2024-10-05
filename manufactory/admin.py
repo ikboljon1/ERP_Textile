@@ -119,16 +119,19 @@ class AssignmentAdmin(admin.ModelAdmin):
 class CuttingAdmin(admin.ModelAdmin):
     list_display = ('assignment', 'order_item', 'quantity', 'map' )
     list_filter = ('assignment',)
+    list_editable = ('quantity',)
 
 @admin.register(MaterialRequest)
 class MaterialRequestAdmin(admin.ModelAdmin):
     list_display = ('id', 'assignment', 'material', 'requested_quantity', 'issued_quantity', 'status')
+    list_display_links = ('assignment', 'material')
     list_filter = ('status', 'material__product')
 
 @admin.register(OperationLog)
 class OperationLogAdmin(admin.ModelAdmin):
     list_display = ('id', 'assignment', 'employee', 'operation', 'quantity', 'defect_quantity', 'status', 'start_time', 'end_time', 'duration')
     list_filter = ('status', 'operation', 'employee')
+    list_editable = ('status', 'end_time','quantity', 'defect_quantity')
 
     #  Автоматически рассчитываем duration при сохранении
     def save_model(self, request, obj, form, change):

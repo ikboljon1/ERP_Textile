@@ -5,18 +5,21 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q, Sum, F
 from django.db import transaction
 
-from .models import Product, POSCart, POSCartItem, POSOrder, POSOrderItem, Stock, Warehouse
-
+from .models import Product, POSCart, POSCartItem, POSOrder, POSOrderItem, Stock, Warehouse, ProductCategory
 
 def pos_view(request):
     products = Product.objects.all()
+    categories = ProductCategory.objects.all()
+    warehouses = Warehouse.objects.all() #  Получите  все  склады
     cart = get_or_create_cart(request)
+
     context = {
         'products': products,
+        'categories': categories,
+        'warehouses': warehouses,  #  Передайте  склады  в  контекст
         'cart': cart,
     }
     return render(request, 'POS.html', context)
-
 
 def get_or_create_cart(request):
     cart_id = request.session.get('cart_id')
@@ -44,72 +47,49 @@ def add_item_to_sale(request):
         product=product,
         defaults={'quantity': quantity}
     )
+
     if not created:
         cart_item.quantity += quantity
         cart_item.save()
 
     return JsonResponse({
         'success': True,
-        'product_id': product.id,
-        'product_name': product.name,
-        'product_price': float(product.selling_price),  # Convert to float
-        'cart_items': list(cart.items.values('product__name', 'quantity', 'product__selling_price'))
+        'cart_items': list(cart.items.values('product__id', 'product__name', 'quantity', 'product__selling_price'))
     })
 
 @require_POST
 def update_sale_item_quantity(request):
-    item_id = request.POST.get('item_id')
-    quantity = int(request.POST.get('quantity'))
+    try:
+        item_id = int(request.POST.get('item_id'))
+        quantity = int(request.POST.get('quantity'))
 
-    cart_item = get_object_or_404(POSCartItem, pk=item_id)
-    cart_item.quantity = quantity
-    cart_item.save()
+        cart_item = POSCartItem.objects.get(pk=item_id)
+        cart_item.quantity = quantity
+        cart_item.save()
 
-    # ... (логика расчета скидки и общей суммы)
-    cart = cart_item.cart
-    subtotal = cart.items.aggregate(total=Sum(F('product__selling_price') * F('quantity')))['total'] or 0
-    total = subtotal  # Замените на расчет с учетом скидки
+        #  Получаем  обновленную  сумму  для  позиции
+        new_total_price = cart_item.product.selling_price * cart_item.quantity
 
-    return JsonResponse({
-        'success': True,
-        'new_total_price': float(cart_item.product.selling_price * cart_item.quantity),
-        'sale_subtotal': float(subtotal),
-        'sale_total': float(total),
-        'cart_items': list(cart.items.values('product__name', 'quantity', 'product__selling_price'))
-    })
+        return JsonResponse({
+            'success': True,
+            'new_total_price': float(new_total_price),
+            'new_quantity': cart_item.quantity  #  Возвращаем  новое  количество
+        })
+    except (ValueError, POSCartItem.DoesNotExist) as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
 
 @require_POST
 def delete_sale_item(request):
     item_id = request.POST.get('item_id')
-    cart_item = get_object_or_404(POSCartItem, pk=item_id)
-    cart_item.delete()
 
-    # ... (логика расчета скидки и общей суммы)
-    cart = cart_item.cart
-    subtotal = cart.items.aggregate(total=Sum(F('product__selling_price') * F('quantity')))['total'] or 0
-    total = subtotal  # Замените на расчет с учетом скидки
+    try:
+        cart_item = POSCartItem.objects.get(pk=item_id)
+        cart_item.delete()
+        return JsonResponse({'success': True})
+    except POSCartItem.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Товар не найден в корзине'}, status=404)
 
-    return JsonResponse({
-        'success': True,
-        'sale_subtotal': float(subtotal),
-        'sale_total': float(total),
-        'cart_items': list(cart.items.values('product__name', 'quantity', 'product__selling_price'))
-    })
-
-def search_products(request):
-    query = request.GET.get('q', '')
-    products = Product.objects.filter(
-        Q(name__icontains=query) |
-        Q(barcode=query)
-    )
-    results = [{'id': product.id, 'name': product.name, 'barcode': product.barcode} for product in products]
-    return JsonResponse({'products': results})
-
-def empty_cart(request):
-    cart = get_or_create_cart(request) #  Получите  корзину  из  сессии
-    cart.items.all().delete() #  Очистите  элементы  корзины
-    return JsonResponse({'success': True})
 
 @require_POST
 @transaction.atomic
@@ -118,44 +98,69 @@ def complete_sale(request):
     if not cart.items.exists():
         return JsonResponse({'success': False, 'error': 'Корзина пуста!'})
 
-    # Получите выбранный склад (предполагается, что он отправляется с формы)
     selected_warehouse_id = request.POST.get('warehouse_id')
     selected_warehouse = get_object_or_404(Warehouse, pk=selected_warehouse_id)
 
-    # Создание заказа POS (POSOrder)
-    order = POSOrder.objects.create(
-        warehouse=selected_warehouse,
-        # ... (добавьте другие поля заказа)
-    )
+    try:
+        with transaction.atomic():
+            #  Создаем  заказ
+            order = POSOrder.objects.create(
+                warehouse=selected_warehouse
+            )
 
-    # Создание позиций заказа (POSOrderItem) и обновление остатков
-    for item in cart.items.all():
-        POSOrderItem.objects.create(
-            order=order,
-            product=item.product,
-            quantity=item.quantity,
-            price=item.product.selling_price
-        )
+            #  Создаем  позиции  заказа  и  обновляем  остатки
+            for item in cart.items.all():
+                POSOrderItem.objects.create(
+                    order=order,
+                    product=item.product,
+                    quantity=item.quantity,
+                    price=item.product.selling_price
+                )
 
-        try:
-            # Находим остатки на складе
-            stock = Stock.objects.get(product=item.product, warehouse=selected_warehouse)
-        except Stock.DoesNotExist:
-            return JsonResponse({'success': False, 'error': 'Товар не найден на складе!'})
+                #  Получаем  остатки  на  складе
+                stock = Stock.objects.select_for_update().get(
+                    product=item.product,
+                    warehouse=selected_warehouse
+                )
 
-        # Проверяем, достаточно ли товара на складе
-        if stock.quantity < item.quantity:
-            return JsonResponse({
-                'success': False,
-                'error': f'Недостаточно товара "{item.product.name}" на складе!'
-            })
+                #  Проверяем  достаточно  ли  товара  на  складе
+                if stock.quantity < item.quantity:
+                    raise ValueError(f'Недостаточно  товара  "{item.product.name}"  на  складе!')
 
-        # Списываем товар со склада
-        stock.quantity -= item.quantity
-        stock.save()
+                #  Списываем  товар  со  склада
+                stock.quantity -= item.quantity
+                stock.save()
 
-    # Очищаем корзину
+        #  Очищаем  корзину  после  успешного  завершения  транзакции
+        cart.items.all().delete()
+        request.session.pop('cart_id', None)
+        return JsonResponse({'success': True})
+
+    except ValueError as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+def search_products(request):
+    query = request.GET.get('q', '')
+    search_by = request.GET.get('search_by', 'name')  #  Параметр  для  выбора  поля  поиска
+
+    if search_by == 'barcode':
+        products = Product.objects.filter(barcode=query)
+    else:
+        products = Product.objects.filter(name__icontains=query)
+
+    results = [{
+        'id': product.id,
+        'name': product.name,
+        'barcode': product.barcode,
+        'selling_price': float(product.selling_price),
+        'quantity': Stock.objects.filter(product=product).values_list('quantity', flat=True).first() or 0
+    } for product in products]
+
+    return JsonResponse({'products': results})
+
+
+@require_POST
+def empty_cart(request):
+    cart = get_or_create_cart(request)
     cart.items.all().delete()
-    request.session.pop('cart_id', None)
-
     return JsonResponse({'success': True})

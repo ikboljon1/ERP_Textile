@@ -10,7 +10,7 @@ from wms.models import Product, Supplier, Warehouse, Receipt, ReceiptItem, Movin
 class ProductAdmin(admin.ModelAdmin):
     list_display = ('name','category','color','barcode', 'composition','hs_code', 'price')  # Поля, отображаемые в списке
     list_filter = ('name','category','color','barcode', 'composition','hs_code', 'price')  # Фильтры в списке
-    search_fields = ('name', 'barcode')
+    search_fields = ('name', 'barcode','color', 'price')
 admin.site.register(ProductCategory)
 
 class StockInline(admin.TabularInline):
@@ -38,6 +38,7 @@ admin.site.register(WarehouseWithStockProxy, WarehouseWithStockAdmin)
 class ReceiptItemInline(admin.TabularInline):
     model = ReceiptItem
     list_display = ('product', 'quantity', 'price','cost_price', 'unit_of_measure')
+    search_fields = ('product', 'quantity', 'price', 'cost_price', 'unit_of_measure')
     readonly_fields = ('cost_price',)
 
 class  ReceiptAdmin(admin.ModelAdmin):
@@ -92,8 +93,38 @@ class ReturnAdmin(admin.ModelAdmin):
     get_product.short_description = 'Товар'
     get_product.admin_order_field = 'receipt_item__product'
 
-admin.site.register(POSOrderItem)
-admin.site.register(POSOrder)
+class POSOrderItemInline(admin.TabularInline):
+    model = POSOrderItem
+    extra = 1
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == 'product':
+            # Добавляем JavaScript код для обработки ввода в выпадающий список
+            kwargs['widget'] = forms.Select(attrs={'onchange': 'handleBarcode(this)'})
+            # ... (остальной код обработки barcode из request.GET)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    class Media:
+        js = ('wms/js/admin_custom.js',)  # Путь к вашему JS файлу
+
+
+@admin.register(POSOrder)
+class POSOrderAdmin(admin.ModelAdmin):
+    list_display = ('id', 'order_date', 'completed', 'warehouse',
+                    'total_amount')
+    list_filter = ('completed', 'order_date', 'warehouse',)
+    search_fields = ('id','order_date', 'completed', 'warehouse__posorder__completed')
+    readonly_fields = ('total_amount',)
+    inlines = [POSOrderItemInline]
+
+    actions = ['complete_orders']
+
+    def complete_orders(self, request, queryset):
+        for order in queryset:
+            order.complete_order()
+        self.message_user(request, f"{queryset.count()} заказов успешно завершены.")
+
+    complete_orders.short_description = " завершить выбранные заказы"
 # class StockAdmin(admin.ModelAdmin):
 #     list_display = ('warehouse','material','quantity')
 #     search_fields = ('warehouse','material','quantity')

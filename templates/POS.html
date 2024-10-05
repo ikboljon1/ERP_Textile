@@ -117,6 +117,15 @@
           </div>
           <p>Подытог: <span id="sale-subtotal">{{ current_sale.subtotal }}</span></p>
           <p>Итого: <span id="sale-total">{{ current_sale.total_amount }}</span></p>
+            <div class="form-group">
+              <label for="warehouse-select">Склад:</label>
+              <select class="form-control" id="warehouse-select">
+                {% for warehouse in warehouses %}
+                  <option value="{{ warehouse.id }}">{{ warehouse.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          <br>
           <button class="btn btn-success complete-sale">Оплатить</button>
           <button class="btn btn-danger">Очистить корзину</button>
         </div>
@@ -318,7 +327,39 @@
     var total = subtotal * (1 - discount / 100);
     $('#sale-total').text(total.toFixed(2));
   }
+        
+  function updateCartItemQuantity(itemId, quantity) {
+    console.log("updateCartItemQuantity called with itemId:", itemId, "quantity:", quantity);
+    $.ajax({
+      url: '{% url "wms:update_sale_item_quantity" %}',
+      type: 'POST',
+      data: {
+        'item_id': itemId,
+        'quantity': quantity
+      },
+      dataType: 'json',
+      success: function(data) {
+        console.log("updateCartItemQuantity success:", data);
+        if (data.success) {
+          // Обновляем  отображение  в  корзине
+          var $row = $('#cart-table tbody tr[data-item-id="' + itemId + '"]');
+          $row.find('.quantity-input').val(quantity); // Обновляем поле количества
+          // Обновляем сумму в строке
+          $row.find('.item-total').text(data.new_total_price);
 
+          // Обновляем общую сумму
+          updateCartSummary(); // Вызываем updateCartSummary() здесь
+        } else {
+          alert(data.error);
+        }
+      },
+      error: function(xhr, status, error) {
+        console.error("updateCartItemQuantity error:", error);
+        alert('Произошла ошибка при обновлении количества товара.');
+      }
+    });
+  }
+  
   // --- Event Handlers ---
   // Adding product
   $('#product-list').on('click', '.product-card', function() {

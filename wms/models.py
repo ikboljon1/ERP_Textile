@@ -200,10 +200,6 @@ class POSOrder(models.Model):
         verbose_name = 'Заказ POS'
         verbose_name_plural = 'Заказы POS'
 
-    class Meta:
-        verbose_name = 'Заказ POS'
-        verbose_name_plural = 'Заказы POS'
-
     def init(self, *args, **kwargs):
         super().init(*args, **kwargs)
         self._original_completed = self.completed

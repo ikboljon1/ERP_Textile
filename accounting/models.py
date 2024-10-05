@@ -4,15 +4,18 @@ from datetime import date
 
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-
+from django.db import transaction
 from HRM.models import Employee, Sewing
-from wms.models import VAT
+from wms.models import VAT, Product, Warehouse, Stock
 
 
 class AccountType(models.TextChoices):
     ACTIVE = 'active', 'Активный'
     PASSIVE = 'passive', 'Пассивный'
     ACTIVE_PASSIVE = 'active_passive', 'Активно-пассивный'
+    INCOME = 'income', 'Доходы'
+    EXPENSE = 'expense', 'Затраты'
+
 
 
 class Account(models.Model):
@@ -225,3 +228,74 @@ class AdvanceAmount(models.Model):
 
     def __str__(self):
         return self.employee.name
+
+#Операции счета
+class Operation(models.Model):
+
+    class Meta:
+        verbose_name = "Операция"
+        verbose_name_plural = "Операция"
+
+    account = models.ForeignKey(Account, on_delete=models.CASCADE)
+    name = models.CharField('Названия', max_length=255)
+    def __str__(self):
+        return self.name
+
+#Расходы
+class Expense(models.Model):
+    class Meta:
+        verbose_name = 'Расходы'
+        verbose_name_plural = 'Расходы'
+
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, verbose_name='Счет')
+    operation = models.ForeignKey(Operation, on_delete=models.CASCADE, verbose_name="Операция")
+    amount = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Сумма")
+    def __str__(self):
+        return f"{self.operation} {self.amount}"
+
+#Списание товара на Актива
+class  WriteOff(models.Model):
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, verbose_name="Категория " )
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="Товар")
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
+                                   verbose_name="Создано пользователем", null=True, blank=True)
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, verbose_name="Склад")
+    quantity = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name='Количество')
+
+    class Meta:
+        verbose_name = 'Списание'
+        verbose_name_plural = 'Списание'
+
+@receiver(post_save, sender=WriteOff)
+def update_stock_on_write_of(sender, instance, created, **kwargs):
+    """ Обновляет остатки при перемещении товара. """
+    if created:
+        if instance.quantity <= 0:
+            raise ValueError("Количество для перемещения должно быть положительным числом.")
+        with transaction.atomic():
+            try:
+                stock_from = Stock.objects.get(product=instance.product, warehouse=instance.warehouse)
+                if stock_from.quantity >= instance.quantity:
+                    stock_from.quantity -= instance.quantity
+                    stock_from.save()
+                else:
+                    raise ValueError("Недостаточно товара на складе-источнике")
+            except Stock.DoesNotExist:
+                raise ValueError(f"Товар {instance.product.name} не найден на складе {instance.warehouse.name}")
+@receiver(post_save, sender=WriteOff)
+def log_stock_changes(sender, instance, **kwargs):
+    print(f"Изменения в модели {sender.__name__}: {instance}")
+
+#Покупка
+class Purchase(models.Model):
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, verbose_name='Счет')
+    operation = models.ForeignKey(Operation, on_delete=models.CASCADE, verbose_name='Операция')
+    quantity = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name='Количество')
+    amount = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name='Сумма')
+
+    class Meta:
+        verbose_name = "Покупка"
+        verbose_name_plural = 'Покупка'
+
+    def __str__(self):
+        return f"{self.operation} {self.quantity} {self.amount}"

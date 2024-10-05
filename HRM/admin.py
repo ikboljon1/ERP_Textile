@@ -42,7 +42,7 @@ class EmployeeAdmin(BaseUserAdmin):
     fieldsets = (
         (None, {'fields': ('username', 'password')}),  # Основные поля
         ('Личная информация', {'fields': ('first_name', 'last_name', 'email')}),  # Личная информация
-        ('Информация о компании', {'fields': ('branch', 'position', 'hire_date', 'role')}),  # Данные о работе
+        ('Информация о компании', {'fields': ('branch', 'position', 'hire_date',)}),  # Данные о работе
         ('Права', {'fields': ('is_staff', 'is_active', 'is_superuser', 'groups',)}),  # Права доступа
         ('Важные даты', {'fields': ('last_login', 'date_joined')}),  # Даты
     )
@@ -50,11 +50,11 @@ class EmployeeAdmin(BaseUserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('username', 'password1', 'password2', 'first_name', 'last_name', 'email', 'role'),
+            'fields': ('username', 'password1', 'password2', 'first_name', 'last_name', 'email', 'groups',),
         }),
     )
 
-    filter_horizontal = ('groups', 'user_permissions')
+    # filter_horizontal = ('groups', 'user_permissions')
 
     # def save_related(self, request, obj, form, change):
     #     super().save_related(request, obj, form, change)  # Сохраняем связанные объекты
@@ -75,10 +75,10 @@ class CustomGroupAdmin(BaseGroupAdmin):
 admin.site.unregister(Group)
 admin.site.register(Group, CustomGroupAdmin)
 
-@admin.register(Role)
-class RoleAdmin(admin.ModelAdmin):
-    list_display = ('name',)
-    search_fields = ('name',)
+# @admin.register(Role)
+# class RoleAdmin(admin.ModelAdmin):
+#     list_display = ('name',)
+#     search_fields = ('name',)
 
 admin.site.register(Brigade)
 

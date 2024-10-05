@@ -59,8 +59,8 @@ class Product(models.Model):
     width = models.DecimalField("Ширина", max_digits=10, decimal_places=2, blank=True, null=True)
     hs_code = models.CharField("Код ТН ВЭД", max_length=20, blank=True, null=True)
     composition = models.CharField("Состав", max_length=255, blank=True, null=True)
-    price = models.DecimalField("Цена", max_digits=10, decimal_places=2, blank=True, null=True)
-    selling_price = models.DecimalField("Цена продажи", max_digits=10, decimal_places=2, blank=True, null=True)
+    price = models.DecimalField("Цена", max_digits=10, decimal_places=2, null=True)
+    selling_price = models.DecimalField("Цена продажи", max_digits=10, decimal_places=2,null=True)
     min_selling_price = models.DecimalField("Мин. цена продажи", max_digits=10, decimal_places=2, blank=True, null=True)
 
     class Meta:
@@ -196,10 +196,6 @@ class POSOrder(models.Model):
     def str(self):
         return f"Заказ POS №{self.id} от {self.order_date.strftime('%d.%m.%Y %H:%M')}"
 
-    def calculate_total_amount(self):
-        """ Вычисляет общую сумму заказа """
-        self.total_amount = self.items.aggregate(total=Sum(F('quantity') * F('price')))['total'] or 0
-        self.save()
 
     def complete_order(self):
         """ Помечает заказ как завершенный и списывает товары со склада. """
@@ -232,14 +228,12 @@ class POSOrderItem(models.Model):
     category = models.ForeignKey(ProductCategory, on_delete=models.CASCADE, verbose_name='Категория')
     product = models.ForeignKey(Product, on_delete=models.PROTECT, verbose_name="Товар")
     quantity = models.DecimalField("Количество", max_digits=10, decimal_places=2, default=1)
-    price = models.DecimalField("Цена", max_digits=10, decimal_places=2, editable=False)
-
     class Meta:
         verbose_name = 'Позиция заказа POS'
         verbose_name_plural = 'Позиции заказов POS'
 
     def str(self):
-        return f"{self.product.name} - {self.quantity} x {self.price}"
+        return f"{self.product.name}"
 
 class POSCart(models.Model):
     session_key = models.CharField(max_length=40, null=True, blank=True)  # Для анонимных пользователей

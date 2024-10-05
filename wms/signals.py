@@ -1,8 +1,9 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.db import transaction
-from .models import Receipt, ReceiptItem, Stock, Moving, Return
+from .models import Receipt, ReceiptItem, Stock, Moving, Return, POSOrderItem
 from django.db.models.signals import pre_save
+from django.db.models import Sum, F
 # --- Сигналы для модели Receipt ---
 
 @receiver(post_save, sender=Receipt)
@@ -110,6 +111,15 @@ def update_stock_on_return(sender, instance, created, **kwargs):
 # --- Логирование изменений (для отладки) ---
 # (Можно закомментировать или удалить после того, как все будет работать)
 
+@receiver(pre_save, sender=POSOrderItem)
+def update_price_from_product(sender, instance, **kwargs):
+    """Обновляет цену позиции заказа из связанного товара перед сохранением."""
+    instance.price = instance.product.selling_price  # Используйте selling_price
+@receiver(post_save, sender=POSOrderItem)
+def update_order_total(sender, instance, created, **kwargs):
+    """ Обновляет общую сумму заказа при добавлении/изменении позиций """
+    instance.order.total_amount = instance.order.items.aggregate(total=Sum(F('quantity') * F('product__selling_price')))['total'] or 0
+    instance.order.save(update_fields=['total_amount'])
 @receiver(post_save, sender=Receipt)
 @receiver(post_save, sender=Moving)
 @receiver(post_save, sender=Return)

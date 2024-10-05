@@ -93,27 +93,20 @@ class ReturnAdmin(admin.ModelAdmin):
     get_product.short_description = 'Товар'
     get_product.admin_order_field = 'receipt_item__product'
 
+
+
 class POSOrderItemInline(admin.TabularInline):
     model = POSOrderItem
     extra = 1
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == 'product':
-            # Добавляем JavaScript код для обработки ввода в выпадающий список
-            kwargs['widget'] = forms.Select(attrs={'onchange': 'handleBarcode(this)'})
-            # ... (остальной код обработки barcode из request.GET)
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
-
-    class Media:
-        js = ('wms/js/admin_custom.js',)  # Путь к вашему JS файлу
 
 
 @admin.register(POSOrder)
 class POSOrderAdmin(admin.ModelAdmin):
     list_display = ('id', 'order_date', 'completed', 'warehouse',
                     'total_amount')
-    list_filter = ('completed', 'order_date', 'warehouse',)
-    search_fields = ('id','order_date', 'completed', 'warehouse__posorder__completed')
+    list_filter = ('completed', 'order_date', 'warehouse', )
+    search_fields = ('id',)
     readonly_fields = ('total_amount',)
     inlines = [POSOrderItemInline]
 

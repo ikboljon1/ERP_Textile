@@ -151,8 +151,8 @@ class OperationLog(models.Model):
     assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, verbose_name="Задание")
     order_item = models.ForeignKey(OrderItem, on_delete=models.CASCADE, verbose_name="Позиция заказа", null=True, blank=True)
     brigade = models.ForeignKey(Brigade, on_delete=models.CASCADE, verbose_name="Бригада", null=True, blank=True)
-    employee = models.ForeignKey(Sewing, on_delete=models.CASCADE, verbose_name="Сотрудник")
-    operation = models.ForeignKey('production.TechnologicalMapOperation', on_delete=models.CASCADE)
+    employee = models.ForeignKey(Sewing, on_delete=models.CASCADE, verbose_name="Сотрудник",null=True, blank=True)
+    operation = models.ForeignKey('production.TechnologicalMapOperation', on_delete=models.CASCADE, null=True, blank=True)
     quantity = models.PositiveIntegerField("Количество")
     start_time = models.DateTimeField("Время начала", default=timezone.now)
     end_time = models.DateTimeField("Время окончания", blank=True, null=True)
@@ -171,9 +171,13 @@ class OperationLog(models.Model):
         default="started",
     )
 
-
     def __str__(self):
-        return f"Фактические данные по операции '{self.operation.operation.name}Задании №{self.assignment.pk}"
+        operation_name = getattr(self.operation, 'operation', None)  # Изменено.
+        if operation_name:  # добавлено
+            operation_name = operation_name.name  # добавлено
+
+        operation_string = f"'{operation_name}'" if operation_name else "без операции"
+        return f"Фактические данные {operation_string} в Задании №{self.assignment.pk}"
 
     class Meta:
         verbose_name = "Назначения"

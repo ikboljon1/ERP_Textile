@@ -153,7 +153,7 @@ class OperationLog(models.Model):
     brigade = models.ForeignKey(Brigade, on_delete=models.CASCADE, verbose_name="Бригада", null=True, blank=True)
     employee = models.ForeignKey(Sewing, on_delete=models.CASCADE, verbose_name="Сотрудник",null=True, blank=True)
     operation = models.ForeignKey('production.TechnologicalMapOperation', on_delete=models.CASCADE, null=True, blank=True)
-    quantity = models.PositiveIntegerField("Количество")
+    quantity = models.PositiveIntegerField("Количество", default=0,)
     start_time = models.DateTimeField("Время начала", default=timezone.now)
     end_time = models.DateTimeField("Время окончания", blank=True, null=True)
     duration = models.DurationField("Длительность", blank=True, null=True)  # Новое поле

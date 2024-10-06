@@ -163,13 +163,14 @@ class Purchase(models.Model):
     transaction_type = models.ForeignKey(TransactionType, on_delete=models.CASCADE, verbose_name='Тип Транзакции', null=True)
     quantity = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name='Количество')
     amount = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name='Сумма')
+    date = models.DateTimeField(auto_now_add=True, verbose_name='Дата', null=True)
 
     class Meta:
         verbose_name = "Покупка"
         verbose_name_plural = 'Покупка'
 
     def __str__(self):
-        return f"{self.transaction_type} {self.quantity} {self.amount}"
+        return f"{self.transaction_type} {self.quantity} {self.amount} ({self.date})"
 
     @transaction.atomic
     def save(self, *args, **kwargs):

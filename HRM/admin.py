@@ -8,7 +8,7 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 
 from order.models import Order
-from .models import Role, Permission, Branch, Employee, Brigade, Sewing
+from .models import Role, Permission, Branch, Employee, Brigade, Sewing, NfcTag
 from django.contrib.contenttypes.models import ContentType
 from manufactory.models import OperationLog
 from manufactory.utils import calculate_piecework_salary
@@ -146,3 +146,5 @@ class SewingAdmin(admin.ModelAdmin):
         extra_context = extra_context or {}
         extra_context['orders'] = Order.objects.all()
         return super().changelist_view(request, extra_context=extra_context)
+
+admin.site.register(NfcTag)

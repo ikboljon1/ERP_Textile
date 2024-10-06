@@ -1,11 +1,15 @@
 from django.contrib import admin
 from django.db.models import Sum
+from django.urls import reverse
+from django.utils.html import format_html
 from django.utils.safestring import mark_safe
-
+from import_export import resources
 from manufactory.models import OperationLog
 from order.models import Order
 from .models import Account, Counterparty, Document, TransactionType, Expense, \
     WriteOff, Purchase
+from rangefilter.filter import DateRangeFilter
+from import_export.admin import ImportExportModelAdmin
 
 @admin.register(TransactionType)
 class TransactionTypeAdmin(admin.ModelAdmin):
@@ -71,15 +75,29 @@ class WriteOffAdmin(admin.ModelAdmin):
         """Запрещаем редактирование записей."""
         return False
 
+class PurchaseResource(resources.ModelResource):
+    class Meta:
+        model = Purchase
+        fields = ('account__name', 'transaction_type__name', 'quantity', 'amount', 'date')
+
+
+
 @admin.register(Purchase)
-class PurchaseAdmin(admin.ModelAdmin):
-    list_display = ('account', 'transaction_type', 'quantity', 'amount')
-    list_filter = ('account', 'transaction_type')
+class PurchaseAdmin(ImportExportModelAdmin):
+    resource_class = PurchaseResource
+    list_display = ('account', 'transaction_type', 'quantity', 'amount', 'date','receipt_link')
+    list_filter = ('account', 'transaction_type',  ('date', DateRangeFilter)) # Добавляем date в list_filter
     search_fields = ('transaction_type__name',)
+
     def has_change_permission(self, request, obj=None):
-        """Запрещаем редактирование записей."""
         return False
 
+    def receipt_link(self, obj):
+        url = reverse('accounting:purchase_receipt', kwargs={'purchase_id': obj.pk})
+        return format_html('<a href="{}" target="_blank">Чек</a>', url)
+
+    receipt_link.short_description = "Чек"
+    receipt_link.allow_tags = True
 # @admin.register(Payroll)
 # class PayrollAdmin(admin.ModelAdmin):
 #     list_display = (

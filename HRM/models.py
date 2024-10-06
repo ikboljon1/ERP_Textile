@@ -77,16 +77,20 @@ class Employee(AbstractUser):
     )
     is_active = models.BooleanField("Работает в данный момент", default=True)
     role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Роль")
-
+    # def save(self, *args, **kwargs):
+    #     super().save(*args, **kwargs)
+    #     if self.role:
+    #         self.user_permissions.set(self.role.permissions.all())
+    # allowed_stages = models.ManyToManyField(
+    #     'production.Stage',
+    #     verbose_name="Разрешенные этапы",
+    #     blank=True
+    # )
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         if self.role:
-            self.user_permissions.set(self.role.permissions.all())
-    allowed_stages = models.ManyToManyField(
-        'production.Stage',
-        verbose_name="Разрешенные этапы",
-        blank=True
-    )
+            permission_ids = self.role.permissions.values_list('id', flat=True)
+            self.user_permissions.set(permission_ids)
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"

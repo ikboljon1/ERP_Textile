@@ -31,8 +31,10 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    # 'admin_soft.apps.AdminSoftDashboardConfig',
     # 'jazzmin',
-    'admin_soft.apps.AdminSoftDashboardConfig',
+    'rangefilter',
+    'import_export',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -48,7 +50,8 @@ INSTALLED_APPS = [
     'colorfield',
     # 'billing'
     'accounting',
-    'CRM'
+    'CRM',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
@@ -133,10 +136,13 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
+AUTHENTICATION_BACKENDS = [
+    'HRM.backends.MyBackend',  # Путь к вашему backend
+    'django.contrib.auth.backends.ModelBackend', # Оставьте ModelBackend для других типов аутентификации
+]
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
-
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
@@ -145,3 +151,4 @@ MEDIA_URL = 'media/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+

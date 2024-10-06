@@ -42,7 +42,7 @@ class EmployeeAdmin(BaseUserAdmin):
     fieldsets = (
         (None, {'fields': ('username', 'password')}),  # Основные поля
         ('Личная информация', {'fields': ('first_name', 'last_name', 'email')}),  # Личная информация
-        ('Информация о компании', {'fields': ('branch', 'position', 'hire_date',)}),  # Данные о работе
+        ('Информация о компании', {'fields': ('branch', 'position', 'hire_date', 'salary',)}),  # Данные о работе
         ('Права', {'fields': ('is_staff', 'is_active', 'is_superuser', 'groups',)}),  # Права доступа
         ('Важные даты', {'fields': ('last_login', 'date_joined')}),  # Даты
     )
@@ -111,6 +111,7 @@ admin.site.register(Brigade)
 #
 #     calculated_salary.short_description = "Зарплата (текущий месяц)"
 
+#Сотрудник швеи
 @admin.register(Sewing)
 class SewingAdmin(admin.ModelAdmin):
     list_display = ('name', 'code', 'calculated_salary')

@@ -1,15 +1,22 @@
 from django.contrib import admin
+from django.contrib.admin import TabularInline
 from django.db.models import Sum
 from django.urls import reverse
 from django.utils.html import format_html
+from django.db.models.expressions import result
+from django.forms import ModelForm
+from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from import_export import resources
+from django.utils.timezone import now
 from manufactory.models import OperationLog
 from order.models import Order
 from .models import Account, Counterparty, Document, TransactionType, Expense, \
     WriteOff, Purchase
 from rangefilter.filter import DateRangeFilter
 from import_export.admin import ImportExportModelAdmin
+    WriteOff, Purchase, SalaryPayment, Payroll, Advance, Bonus, AccountTransaction
+
 
 @admin.register(TransactionType)
 class TransactionTypeAdmin(admin.ModelAdmin):
@@ -30,6 +37,29 @@ class TransactionTypeAdmin(admin.ModelAdmin):
 #     def save_model(self, request, obj, form, change):
 #         obj.created_by = request.user
 #         super().save_model(request, obj, form, change)
+@admin.register(AccountTransaction)
+class AccountTransactionAdmin(admin.ModelAdmin):
+    list_display = ('account', 'timestamp', 'operation_type', 'amount', 'quantity', 'description', 'direction','related_object')
+    list_filter = ('account', 'operation_type', 'timestamp', 'direction')
+    search_fields = ('account', 'timestamp', 'operation_type', 'amount', 'quantity', 'description', 'direction','related_object')
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    @admin.display(description='Тип операции')
+    def colored_operation_type(self, obj):
+        if obj.direction == 'in':
+            color = 'green'
+        else:
+            color = 'red'
+        return format_html(f'<span style="color: {color}; font-weight: bold;">{obj.operation_type}</span>')
+
 
 @admin.register(Account)
 class AccountAdmin(admin.ModelAdmin):
@@ -98,6 +128,15 @@ class PurchaseAdmin(ImportExportModelAdmin):
 
     receipt_link.short_description = "Чек"
     receipt_link.allow_tags = True
+@admin.register(SalaryPayment)
+class SalaryPaymentAdmin(admin.ModelAdmin):
+    list_display = ('employee', 'period', 'amount', 'payment_date', 'account', 'notes')
+    list_filter = ('employee', 'period', 'account')
+    search_fields = ('employee__name', 'notes')
+
+    # Поля для редактирования в форме
+    fields = ('employee', 'period', 'amount', 'account', 'notes')
+
 # @admin.register(Payroll)
 # class PayrollAdmin(admin.ModelAdmin):
 #     list_display = (
@@ -243,17 +282,164 @@ class PurchaseAdmin(ImportExportModelAdmin):
 #         return f"{obj.total_amount} сом"
 #
 #     calculated_salary.short_description = "Зарплата (текущий месяц)"
+
+# #Аванс
+# @admin.register(Advance)
+# class AdvanceAdmin(admin.ModelAdmin):
+#     list_display = ('employee', 'issue_date', 'amount', 'account', 'period', 'included_in_payroll')
+#     list_filter = ('employee', 'issue_date', 'period', 'included_in_payroll')
+#     search_fields = ('employee__username', 'employee__first_name', 'employee__last_name')
 #
-#     def changelist_view(self, request, extra_context=None):
-#         """ Добавляем форму для выбора заказа и периода в список сотрудников """
-#         extra_context = extra_context or {}
-#         extra_context['orders'] = Order.objects.all()
-#         return super().changelist_view(request, extra_context=extra_context)
+#     def save_model(self, request, obj, form, change):
+#         super().save_model(request, obj, form, change)
+#         # При создании или изменении Advance списываем сумму со счета (если счет указан)
+#         if obj.account:
+#             if not change:  # Если это новый объект Advance
+#                 obj.account.balance -= obj.amount
+#             else:  # Если это изменение существующего объекта Advance
+#                 original_advance = Advance.objects.get(pk=obj.pk)
+#                 obj.account.balance += original_advance.amount  # Возвращаем старую сумму на счет
+#                 obj.account.balance -= obj.amount  # Списываем новую сумму со счета
 #
+#             obj.account.save()
+
+
+# @admin.register(Payroll)
+# class PayrollAdmin(admin.ModelAdmin):
+#     list_display = ('employee', 'period_start', 'period_end', 'total_amount', 'paid', 'payment_date')
+#     list_filter = ('employee', 'period_start', 'period_end', 'paid')
+#     search_fields = ('employee__username', 'employee__first_name', 'employee__last_name')
+#     readonly_fields = ('total_accrued', 'total_deductions', 'total_amount')
+#     actions = ['calculate_salary', 'mark_as_paid']
 #
 #     def calculate_salary(self, request, queryset):
 #         for payroll in queryset:
 #             payroll.calculate_salary()
+#             payroll.save()
 #         self.message_user(request, f"Зарплата рассчитана для {queryset.count()} сотрудников.")
 #
 #     calculate_salary.short_description = "Рассчитать зарплату"
+#
+#     @admin.action(description="Отметить как выплачено")
+#     def mark_as_paid(self, request, queryset):
+#         updated_count = queryset.filter(paid=False).update(paid=True, payment_date=now())
+#         self.message_user(request, f"{updated_count} зарплатных ведомостей отмечено как выплачено.")
+
+# @admin.register(Advance)
+# class AdvanceAdmin(admin.ModelAdmin):
+#     list_display = ('employee', 'issue_date', 'amount', 'account', 'period', 'included_in_payroll')
+#     list_filter = ('employee', 'issue_date', 'period', 'included_in_payroll')
+#     search_fields = ('employee__username', 'employee__first_name', 'employee__last_name')
+#
+# @admin.register(Bonus)
+# class BonusAdmin(admin.ModelAdmin):
+#     list_display = ('employee', 'reason', 'amount', 'issue_date', 'account', 'period', 'included_in_payroll')
+#     list_filter = ('employee', 'issue_date', 'period', 'included_in_payroll')
+#     search_fields = ('employee__username', 'employee__first_name', 'employee__last_name', 'reason')
+#
+# @admin.register(Payroll)
+# class PayrollAdmin(admin.ModelAdmin):
+#     list_display = (
+#         'employee', 'period_start', 'period_end', 'salary_amount', 'bonus_paid', 'advance_paid',
+#         'other_allowances', 'taxes_percent', 'social_security_percent',
+#         'other_deductions', 'total_accrued', 'total_deductions',
+#         'total_amount', 'paid', 'payment_date'
+#     )
+#     list_filter = ('employee', 'period_start', 'period_end', 'paid')
+#     search_fields = ('employee__username', 'employee__first_name', 'employee__last_name')
+#     readonly_fields = (
+#         'total_accrued', 'total_deductions', 'total_amount',
+#         'payment_date', 'advance_paid', 'bonus_paid'
+#     )
+#     actions = ['calculate_salary', 'mark_as_paid']
+#
+#     def calculate_salary(self, request, queryset):
+#         for payroll in queryset:
+#             payroll.calculate_salary()
+#             payroll.save()
+#         self.message_user(request, f"Зарплата рассчитана для {queryset.count()} сотрудников.")
+#
+#     calculate_salary.short_description = "Рассчитать зарплату"
+#
+#     @admin.action(description="Отметить как выплачено")
+#     def mark_as_paid(self, request, queryset):
+#         updated_count = queryset.filter(paid=False).update(paid=True, payment_date=now())
+#         self.message_user(request, f"{updated_count} зарплатных ведомостей отмечено как выплачено.")
+
+@admin.register(Advance)
+class AdvanceAdmin(admin.ModelAdmin):
+    list_display = ('employee', 'issue_date', 'amount', 'accounted', 'period')
+    list_filter = ('employee', 'issue_date', 'accounted', 'period')
+    search_fields = ('employee__username', 'employee__first_name', 'employee__last_name')
+
+    def has_change_permission(self, request, obj=None):
+        """ Запрещаем редактирование, если аванс учтен. """
+        if obj and obj.accounted:
+            return False
+        return super().has_change_permission(request, obj)
+
+@admin.register(Bonus)
+class BonusAdmin(admin.ModelAdmin):
+    list_display = ('employee', 'reason', 'amount', 'issue_date', 'accounted', 'period')
+    list_filter = ('employee', 'issue_date', 'accounted', 'period')
+    search_fields = ('employee__username', 'employee__first_name', 'employee__last_name', 'reason')
+
+    def has_change_permission(self, request, obj=None):
+        """ Запрещаем редактирование, если бонус учтен. """
+        if obj and obj.accounted:
+            return False
+        return super().has_change_permission(request, obj)
+
+class AdvanceInlineForm(ModelForm):
+    class Meta:
+        model = Advance
+        fields = ('issue_date', 'amount')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Устанавливаем период аванса равным периоду зарплаты
+        self.fields['issue_date'].initial = self.instance.payroll.period_start
+
+class AdvanceInline(TabularInline):
+    model = Advance
+    form = AdvanceInlineForm  # Используем нашу форму
+    extra = 1  # Показываем одну пустую форму для добавления
+    readonly_fields = ('accounted', )
+
+    def has_delete_permission(self, request, obj=None):
+        # Запрещаем удаление авансов из Payroll
+        return False
+
+
+@admin.register(Payroll)
+class PayrollAdmin(admin.ModelAdmin):
+    list_display = (
+        'employee', 'period_start', 'period_end', 'salary_amount',
+        'other_allowances', 'taxes_percent', 'social_security_percent',
+        'other_deductions', 'total_accrued', 'total_deductions',
+        'total_amount', 'paid', 'payment_date'
+    )
+    list_filter = ('employee', 'period_start', 'period_end', 'paid')
+    search_fields = ('employee__username', 'employee__first_name', 'employee__last_name')
+    readonly_fields = (
+        'total_accrued', 'total_deductions', 'total_amount',
+        'payment_date','advance_paid', 'bonus_paid'
+    )
+    actions = ['calculate_salary', 'mark_as_paid']
+
+
+
+    def calculate_salary(self, request, queryset):
+        for payroll in queryset:
+            payroll.calculate_salary()
+            payroll.save()
+        self.message_user(request, f"Зарплата рассчитана для {queryset.count()} сотрудников.")
+
+    calculate_salary.short_description = "Рассчитать зарплату"
+
+
+
+    @admin.action(description="Отметить как выплачено")
+    def mark_as_paid(self, request, queryset):
+        updated_count = queryset.filter(paid=False).update(paid=True, payment_date=now())
+        self.message_user(request, f"{updated_count} зарплатных ведомостей отмечено как выплачено.")

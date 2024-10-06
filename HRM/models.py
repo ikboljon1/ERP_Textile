@@ -49,6 +49,7 @@ class Employee(AbstractUser):
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Филиал")
     position = models.CharField("Должность", max_length=100)
     hire_date = models.DateField("Дата приема на работу", null=True, blank=True)
+    salary = models.DecimalField('Зарплата', decimal_places=2, max_digits=10, null=True, blank=True)
     PAYMENT_TYPE_CHOICES = [
         ('piecework', 'Сдельная оплата'),
         ('salary', 'Фиксированный оклад'),

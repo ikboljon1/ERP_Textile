@@ -1,24 +1,8 @@
 # Название вашего проекта
 
-[![Python version](https://img.shields.io/badge/python-3.10-blue.svg)](https://www.python.org/downloads/release/python-3100/)
+[![Python version](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/release/python-3100/)
 [![Django version](https://img.shields.io/badge/django-4.1-green.svg)](https://www.djangoproject.com/download/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
-## Описание
-
-Краткое описание вашего проекта и его функциональности. Например:
-
-> Этот проект представляет собой систему управления заказами для текстильной компании. 
-
-## Основные возможности
-
-* Список ключевых возможностей вашего приложения.
-* Например:
-    * Создание и управление заказами
-    * Управление клиентами (контрагентами)
-    * Ведение бухгалтерского учета
-    * Управление складом
-    * Управление производством 
 
 ## Установка
    ```bash

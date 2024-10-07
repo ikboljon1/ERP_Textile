@@ -76,6 +76,11 @@ class TransactionType(models.Model):
         verbose_name = 'Тип транзакции'
         verbose_name_plural = verbose_name
 
+    NAME_CHOICES = (
+        ('EXPENSE', 'Расход'),
+        ('PURCHASE', 'Покупка'),
+    )
+
     name = models.CharField("Название Транзакции", max_length=255)
     parent_transaction = models.ForeignKey(
         'self',
@@ -85,19 +90,60 @@ class TransactionType(models.Model):
         verbose_name="Родительский счет"
     )
     description = models.TextField("Описание", blank=True)
+    type = models.CharField("Тип", max_length=10, choices=NAME_CHOICES, null=True)
 
     def __str__(self):
         parent_name = self.parent_transaction.name + " - " if self.parent_transaction else ""
-        return f"{parent_name}{self.name} "
+        return f"{parent_name}{self.name} ({self.get_type_display()})"
 
-class AdvanceAmount(models.Model):
-    employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
-    amount = models.DecimalField('Сумма', max_digits=10, decimal_places=2, default=0)
-    period_start = models.DateField("Начало периода", default=date.today)
-    period_end = models.DateField("Конец периода", null=True)
 
-    def __str__(self):
-        return self.employee.name
+# class ExpenseTransactionType(TransactionType):
+#     class Meta:
+#         verbose_name = 'Расходный тип транзакции'
+#         verbose_name_plural = verbose_name
+#
+#     name = models.CharField("Название Транзакции", max_length=255)
+#     parent_transaction = models.ForeignKey(
+#         'self',
+#         on_delete=models.CASCADE,
+#         null=True,
+#         blank=True,
+#         verbose_name="Родительский счет"
+#     )
+#     description = models.TextField("Описание", blank=True)
+#
+#     def __str__(self):
+#         parent_name = self.parent_transaction.name + " - " if self.parent_transaction else ""
+#         return f"{parent_name}{self.name} "
+#
+# class PurchaseTransactionType(TransactionType):
+#     class Meta:
+#         verbose_name = 'Покупка тип транзакции'
+#         verbose_name_plural = verbose_name
+#
+#     name = models.CharField("Название Транзакции", max_length=255)
+#     parent_transaction = models.ForeignKey(
+#         'self',
+#         on_delete=models.CASCADE,
+#         null=True,
+#         blank=True,
+#         verbose_name="Родительский счет"
+#     )
+#     description = models.TextField("Описание", blank=True)
+#
+#     def __str__(self):
+#         parent_name = self.parent_transaction.name + " - " if self.parent_transaction else ""
+#         return f"{parent_name}{self.name} "
+
+
+# class AdvanceAmount(models.Model):
+#     employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
+#     amount = models.DecimalField('Сумма', max_digits=10, decimal_places=2, default=0)
+#     period_start = models.DateField("Начало периода", default=date.today)
+#     period_end = models.DateField("Конец периода", null=True)
+#
+#     def __str__(self):
+#         return self.employee.name
 
 #Расходы
 class Expense(models.Model):
@@ -108,6 +154,7 @@ class Expense(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, verbose_name='Счет')
     operation = models.ForeignKey(TransactionType, on_delete=models.CASCADE, verbose_name="Операция")
     amount = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Сумма")
+    date = models.DateField('Дата', editable=False, default= date.today)
     def __str__(self):
         return f"{self.operation} {self.amount}"
 
@@ -119,6 +166,14 @@ class Expense(models.Model):
             self.account.save()
 
         super().save(*args, **kwargs)
+        AccountTransaction.objects.create(
+            account=self.account,
+            timestamp=self.date,
+            amount=self.amount,  # Или total_amount, если нужно учитывать вычеты
+            transaction_type=self.operation,
+            direction='out',
+        )
+
 
 
 @receiver(post_save, sender=Expense)
@@ -143,6 +198,11 @@ class  WriteOff(models.Model):
 
 #Аванс
 class Advance(models.Model):
+
+    class Meta:
+        verbose_name = 'Аванс'
+        verbose_name_plural = verbose_name
+
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE, verbose_name="Сотрудник")
     issue_date = models.DateField("Дата выдачи", default=date.today)
     amount = models.DecimalField("Сумма аванса", max_digits=10, decimal_places=2)
@@ -187,6 +247,11 @@ class Advance(models.Model):
 
 #Премия
 class Bonus(models.Model):
+
+    class Meta:
+        verbose_name = 'Премия'
+        verbose_name_plural = verbose_name
+
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE, verbose_name="Сотрудник")
     reason = models.CharField("Причина премии", max_length=255)
     amount = models.DecimalField("Сумма премии", max_digits=10, decimal_places=2)
@@ -258,8 +323,8 @@ class Payroll(models.Model):
         return f"Зарплата {self.employee.get_full_name()} за период с {self.period_start} по {self.period_end}"
 
     class Meta:
-        verbose_name = "Зарплатная ведомость"
-        verbose_name_plural = "Зарплатные ведомости"
+        verbose_name = "Зарплата Сотрудников"
+        verbose_name_plural = "Зарплата Сотрудников"
 
     def clean(self):
         if self.period_end and self.period_start > self.period_end:
@@ -432,7 +497,7 @@ class Purchase(models.Model):
         AccountTransaction.objects.create(
             account=self.account,
             quantity=self.quantity,
-            operation_type=self.transaction_type,
+            transaction_type=self.transaction_type,
             amount=self.amount,
             direction='out',
         )
@@ -446,6 +511,11 @@ def log_purchase(sender, instance, created, **kwargs):
 
 #История операции
 class AccountTransaction(models.Model):
+
+    class Meta:
+        verbose_name = 'История операции'
+        verbose_name_plural = verbose_name
+
     account = models.ForeignKey('Account', on_delete=models.CASCADE, verbose_name="Счет")
     timestamp = models.DateTimeField("Дата и время", auto_now_add=True)
     amount = models.DecimalField("Сумма", max_digits=12, decimal_places=2)
@@ -462,6 +532,8 @@ class AccountTransaction(models.Model):
     ]
     direction = models.CharField("Направление", max_length=3, choices=DIRECTION_CHOICES, default='out')
     reason = models.CharField("Причина", max_length=255, null=True, blank=True)
+    transaction_type = models.ForeignKey("TransactionType", on_delete=models.CASCADE, verbose_name='Тип транзакции', null=True)
+    payment_method = models.CharField("Способ оплаты", max_length=50, null=True)
 
     def __str__(self):
         return f"{self.operation_type}: {self.amount} на счет {self.account} - {self.description}"

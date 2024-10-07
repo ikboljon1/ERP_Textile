@@ -87,7 +87,7 @@ class PaymentInline(admin.TabularInline):
 
 class OrderAdmin(admin.ModelAdmin):
 
-    list_display = ('uuid', 'customer', 'order_date', 'total_amount', 'total_paid', 'remaining_amount', 'status', 'payment_status')
+    list_display = ('uuid', 'customer', 'order_date', "total_cost",'total_amount', 'total_paid', 'remaining_amount', 'status', 'payment_status')
     list_filter = ('status', 'customer', 'order_date')
     inlines = [OrderItemInline, PaymentInline]
     readonly_fields = ('total_paid', 'remaining_amount')

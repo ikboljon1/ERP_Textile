@@ -31,6 +31,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+
     # 'admin_soft.apps.AdminSoftDashboardConfig',
     'jazzmin',
     'rangefilter',
@@ -80,6 +81,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
+        "builtins": ["wms.templatetags.customtags"],
         },
     },
 ]
@@ -152,3 +154,10 @@ MEDIA_URL = 'media/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+JAZZMIN_SETTINGS = {
+# title of the window (Will default to current_admin_site.site_title if absent or None)
+    "site_title": "ERP Textile",
+    # Copyright on the footer
+    "copyright": "Zero Soft Ltd",
+
+}

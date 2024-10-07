@@ -9,6 +9,7 @@ from ERP_Textile import settings
 from HRM.models import Employee
 from CRM.models import Counterparty
 
+
 class Currency(models.TextChoices):
     USD = 'USD', 'USD'
     EUR = 'EUR', 'EUR'
@@ -244,3 +245,21 @@ class POSCartItem(models.Model):
     cart = models.ForeignKey(POSCart, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.DecimalField(max_digits=10, decimal_places=2, default=1)
+
+# @transaction.atomic
+# def save(self, *args, **kwargs):
+#     # Списание суммы с баланса счета, если операция еще не выполнена
+#     if not self.pk:  # Проверяем, создается ли объект (не обновляется)
+#         self.account.balance -= self.amount
+#         self.account.save()
+#
+#     super().save(*args, **kwargs)
+#     AccountTransaction.objects.create(
+#         account=self.account,
+#         timestamp=self.payment_date,
+#         amount=self.amount,  # Или total_amount, если нужно учитывать вычеты
+#         operation_type='Выплата зарплаты',
+#         description=f"Сотрудник: {self.employee.name}-{self.employee.code}",
+#         related_object=self, # Связываем с Payroll
+#         direction = 'out',
+#     )

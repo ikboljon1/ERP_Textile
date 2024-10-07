@@ -211,3 +211,28 @@ def get_remaining_quantity_for_order_operation(order_item, operation):
     """Возвращает количество оставшихся изделий."""
     produced_quantity = get_produced_quantity_for_order_operation(order_item, operation)
     return order_item.quantity - produced_quantity
+
+class Shipment(models.Model):
+    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, verbose_name="Задание")
+    shipment_date = models.DateTimeField("Дата отгрузки", null=True, blank=True)
+    shipping_method = models.CharField("Способ доставки", max_length=255, blank=True)
+    tracking_number = models.CharField("Номер накладной", max_length=255, blank=True)
+    # Добавьте другие необходимые поля, например:
+    # - delivery_address: models.TextField("Адрес доставки", blank=True)
+    # - recipient: models.CharField("Получатель", max_length=255, blank=True)
+
+    STATUS_CHOICES = (
+        ('draft', 'Черновик'),
+        ('ready_for_shipment', 'Готово к отгрузке'),
+        ('shipped', 'Отгружено'),
+        ('delivered', 'Доставлено'),
+        ('canceled', 'Отменено'),
+    )
+    status = models.CharField("Статус", max_length=20, choices=STATUS_CHOICES, default='draft')
+
+    class Meta:
+        verbose_name = "Отгрузка"
+        verbose_name_plural = "Отгрузки"
+
+    def __str__(self):
+        return f"Отгрузка по заданию {self.assignment} от {self.shipment_date}"

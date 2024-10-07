@@ -3,7 +3,7 @@ from django.db.models import Sum
 from django.utils.safestring import mark_safe
 from prompt_toolkit.validation import ValidationError
 
-from .models import Assignment, MaterialRequest, OperationLog, Defect, Cutting
+from .models import Assignment, MaterialRequest, OperationLog, Defect, Cutting, Shipment
 
 
 @admin.register(Assignment)
@@ -129,9 +129,9 @@ class MaterialRequestAdmin(admin.ModelAdmin):
 
 @admin.register(OperationLog)
 class OperationLogAdmin(admin.ModelAdmin):
-    list_display = ('id', 'assignment', 'employee', 'operation', 'quantity', 'defect_quantity', 'status', 'start_time', 'end_time', 'duration')
+    list_display = ('id', 'assignment', 'order_item','employee', 'operation', 'quantity', 'defect_quantity', 'status', 'start_time', 'end_time', 'duration')
     list_filter = ('status', 'operation', 'employee')
-    list_editable = ('status', 'end_time','quantity', 'defect_quantity')
+    list_editable = ('order_item','employee', 'operation','status', 'end_time','quantity', 'defect_quantity')
 
     #  Автоматически рассчитываем duration при сохранении
     def save_model(self, request, obj, form, change):
@@ -166,6 +166,10 @@ class OperationLogAdmin(admin.ModelAdmin):
 class DefectAdmin(admin.ModelAdmin):
     list_display = ('id', 'assignment', 'employee', 'operation', 'quantity', 'description', 'created_at')
     list_filter = ('assignment', 'employee', 'operation')
+
+@admin.register(Shipment)
+class ShipmentAdmin(admin.ModelAdmin):
+    list_display = ('assignment', 'shipment_date', 'shipping_method', 'tracking_number', 'status')
 
 admin.site.site_title = 'Ak-Saray'
 admin.site.site_header = 'Ak-Saray'

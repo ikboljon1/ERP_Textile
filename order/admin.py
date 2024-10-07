@@ -2,8 +2,15 @@ from django.contrib import admin
 from django.db.models import Sum
 from django.utils.safestring import mark_safe
 
+from manufactory.models import Assignment
 from .models import Order, OrderItem, Payment
-
+from django.contrib import admin
+from django.urls import path
+from django.http import HttpResponseRedirect
+from django.utils.html import format_html
+from django.urls import reverse
+from django.db.models import Sum
+from django.utils.safestring import mark_safe
 
 # # Register your models here.
 # class OrderItemInline(admin.TabularInline):
@@ -84,13 +91,40 @@ class OrderItemInline(admin.TabularInline):
 class PaymentInline(admin.TabularInline):
     model = Payment
     extra = 0
-
 class OrderAdmin(admin.ModelAdmin):
-
-    list_display = ('uuid', 'customer', 'order_date', 'total_amount', 'total_paid', 'remaining_amount', 'status', 'payment_status')
+    list_display = (
+        'uuid', 'customer', 'order_date', 'total_amount', 'total_paid',
+        'remaining_amount', 'status', 'payment_status', 'create_assignment_button'
+    )
     list_filter = ('status', 'customer', 'order_date')
     inlines = [OrderItemInline, PaymentInline]
     readonly_fields = ('total_paid', 'remaining_amount')
+
+    def create_assignment(self, request, order_id):
+        order = Order.objects.get(pk=order_id)
+        Assignment.objects.create(order=order)  # Создаем Assignment, связанный с заказом
+        self.message_user(request, "Assignment создан успешно!")
+        return HttpResponseRedirect("../")
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                '<path:order_id>/create_assignment/',
+                self.admin_site.admin_view(self.create_assignment),
+                name='create_assignment',
+            ),
+        ]
+        return custom_urls + urls
+
+    def create_assignment_button(self, obj):
+        return format_html(
+            '<a class="button" href="{}">на производство</a>',
+            reverse('admin:create_assignment', args=[obj.pk]),
+        )
+
+    create_assignment_button.short_description = "Создать Assignment"
+    create_assignment_button.allow_tags = True
 
     @admin.display(description='Всего оплачено')
     def total_paid(self, obj):

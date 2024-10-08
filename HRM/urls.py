@@ -1,6 +1,9 @@
 from django.urls import path
-from . import views
 
+from .views import nfc_login_view
+
+app_name = 'hrm'
 urlpatterns = [
-    path('nfc_auth/', views.nfc_auth, name='nfc_auth'), #  Добавьте этот путь
+  # ... другие URL
+  path('nfc_login/', nfc_login_view, name='nfc_login'),
 ]

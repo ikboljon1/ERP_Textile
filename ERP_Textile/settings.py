@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 import os
 from pathlib import Path
 
+
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -26,6 +28,7 @@ SECRET_KEY = 'django-insecure-vjxuva9+z^o=u+-_u!qpn34i$%f-3a9ym97758*0pgy1@6*$zk
 DEBUG = True
 
 ALLOWED_HOSTS = []
+
 
 
 # Application definition
@@ -65,6 +68,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+SESSION_COOKIE_AGE = 300
+SESSION_SAVE_EVERY_REQUEST = True
 
 ROOT_URLCONF = 'ERP_Textile.urls'
 
@@ -159,5 +164,48 @@ JAZZMIN_SETTINGS = {
     "site_title": "ERP Textile",
     # Copyright on the footer
     "copyright": "Zero Soft Ltd",
+    # "show_ui_builder": True,
+    "icons": {
+        "auth": "fas fa-users-cog",
+        "auth.HRM": "fas fa-user",
+        "auth.Group": "fas fa-users",
+    },
+    "changeform_format": "horizontal_tabs",
 
+
+
+}
+
+JAZZMIN_UI_TWEAKS = {
+    "navbar_small_text": False,
+    "footer_small_text": False,
+    "body_small_text": False,
+    "brand_small_text": False,
+    "brand_colour": False,
+    "accent": "accent-primary",
+    "navbar": "navbar-white navbar-light",
+    "no_navbar_border": False,
+    "navbar_fixed": True,
+    "layout_boxed": False,
+    "footer_fixed": False,
+    "sidebar_fixed": True,
+    "sidebar": "sidebar-dark-primary",
+    "sidebar_nav_small_text": False,
+    "sidebar_disable_expand": False,
+    "sidebar_nav_child_indent": False,
+    "sidebar_nav_compact_style": False,
+    "sidebar_nav_legacy_style": False,
+    "sidebar_nav_flat_style": False,
+    "theme": "journal",
+    "dark_mode_theme": None,
+    # "custom_css": "common/css/main.css",
+    # "custom_js": "ERP_Textile/static/js/session_management.js",
+    "button_classes": {
+        "primary": "btn-outline-primary",
+        "secondary": "btn-outline-secondary",
+        "info": "btn-info",
+        "warning": "btn-warning",
+        "danger": "btn-danger",
+        "success": "btn-success"
+    }
 }

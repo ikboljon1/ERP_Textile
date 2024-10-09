@@ -33,51 +33,80 @@ from django.core.exceptions import ObjectDoesNotExist # Для обработк�
 #         return JsonResponse({"success": True, "user_id": user.id})
 #
 #     return JsonResponse({"error": "Метод не разрешен."}, status=405)
-@ensure_csrf_cookie  # Для GET-запросов, чтобы установить CSRF-токен
-@csrf_protect  # Для POST-запросов, чтобы проверить CSRF-токен
-def nfc_auth(request):
+
+# @ensure_csrf_cookie  # Для GET-запросов, чтобы установить CSRF-токен
+# @csrf_protect  # Для POST-запросов, чтобы проверить CSRF-токен
+# def nfc_auth(request):
+#     if request.method == 'POST':
+#         nfc_uid = request.POST.get('nfc_uid')
+#         if not nfc_uid:
+#             return JsonResponse({"error": "NFC UID не передан."}, status=400)
+#
+#         try:
+#             nfc_tag = NfcTag.objects.get(uid=nfc_uid)
+#             user = nfc_tag.employee.user if nfc_tag.employee else None
+#             if user:
+#                  login(request, user)
+#
+#                  #  Вариант 1:  Просто id пользователя
+#                  # return JsonResponse({"success": True, "user_id": user.id})
+#
+#                  #  Вариант 2:  Сериализатор (рекомендуется)
+#                  # from rest_framework import serializers # Импортируйте serializers
+#
+#                  # class UserSerializer(serializers.ModelSerializer):
+#                  #     class Meta:
+#                  #         model = User
+#                  #         fields = ('id', 'username', 'first_name', 'last_name') #  Добавьте нужные поля
+#
+#                  # serializer = UserSerializer(user)
+#                  # return JsonResponse({"success": True, "user": serializer.data})
+#
+#                  # Вариант 3: Token authentication (если используется DRF)
+#                  token, _ = Token.objects.get_or_create(user=user)
+#                  return JsonResponse({"success": True, "token": token.key})
+#
+#
+#
+#
+#             else:
+#                 return JsonResponse({"error": "Метка не привязана к сотруднику."}, status=400)
+#
+#
+#
+#         except ObjectDoesNotExist:  # Общая обработка исключений
+#             return JsonResponse({"error": "Метка не найдена или произошла другая ошибка."}, status=404)
+#         except Exception as e: # Ловим все остальные исключения
+#              return JsonResponse({"error": f"Произошла ошибка: {str(e)}"}, status=500)
+#
+#
+#
+#     return JsonResponse({"error": "Метод не разрешен."}, status=405)
+
+from django.shortcuts import redirect
+from django.views.decorators.csrf import csrf_exempt  # Временно!
+from django.http import JsonResponse
+from .models import NfcTag, Employee
+from django.contrib.auth import login
+
+@csrf_exempt  # ВАЖНО: Замените на безопасный механизм!
+def nfc_login_view(request):
+    """ Обрабатывает POST запрос от NFC считывателя. """
     if request.method == 'POST':
         nfc_uid = request.POST.get('nfc_uid')
         if not nfc_uid:
-            return JsonResponse({"error": "NFC UID не передан."}, status=400)
+            return JsonResponse({'error': 'NFC UID не найден'}, status=400)
 
         try:
             nfc_tag = NfcTag.objects.get(uid=nfc_uid)
-            user = nfc_tag.employee.user if nfc_tag.employee else None
-            if user:
-                 login(request, user)
+        except NfcTag.DoesNotExist:
+            return JsonResponse({'error': 'Метка не найдена'}, status=404)
 
-                 #  Вариант 1:  Просто id пользователя
-                 # return JsonResponse({"success": True, "user_id": user.id})
+        employee = nfc_tag.employee
+        if employee and employee.is_active:
+            login(request, employee)  # Выполняем вход пользователя
+            return redirect('home')  # Перенаправляем на главную
+        else:
+            return JsonResponse({'error': 'Ошибка аутентификации'}, status=401)
 
-                 #  Вариант 2:  Сериализатор (рекомендуется)
-                 # from rest_framework import serializers # Импортируйте serializers
-
-                 # class UserSerializer(serializers.ModelSerializer):
-                 #     class Meta:
-                 #         model = User
-                 #         fields = ('id', 'username', 'first_name', 'last_name') #  Добавьте нужные поля
-
-                 # serializer = UserSerializer(user)
-                 # return JsonResponse({"success": True, "user": serializer.data})
-
-                 # Вариант 3: Token authentication (если используется DRF)
-                 token, _ = Token.objects.get_or_create(user=user)
-                 return JsonResponse({"success": True, "token": token.key})
-
-
-
-
-            else:
-                return JsonResponse({"error": "Метка не привязана к сотруднику."}, status=400)
-
-
-
-        except ObjectDoesNotExist:  # Общая обработка исключений
-            return JsonResponse({"error": "Метка не найдена или произошла другая ошибка."}, status=404)
-        except Exception as e: # Ловим все остальные исключения
-             return JsonResponse({"error": f"Произошла ошибка: {str(e)}"}, status=500)
-
-
-
-    return JsonResponse({"error": "Метод не разрешен."}, status=405)
+    return JsonResponse({'error': 'Неверный метод запроса'}, status=405)

@@ -133,7 +133,7 @@ class Sewing(models.Model):
     code = models.DecimalField(max_digits=9999, decimal_places=0)
 
     class Meta:
-        verbose_name = 'Швея'
+        verbose_name = 'Сотрудники швеи'
         verbose_name_plural = 'Швея'
 
     def __str__(self):

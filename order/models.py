@@ -8,7 +8,7 @@ from django.utils.safestring import mark_safe
 from django.db import transaction
 
 from CRM.models import Counterparty
-from accounting.models import Account
+from accounting.models import Account, AccountTransaction
 from production.models import Color, ProductionItem
 
 class Order(models.Model):
@@ -114,8 +114,11 @@ class OrderItem(models.Model):
     def __str__(self):
         return f"{self.product.name} {self.quantity} {self.color} {self.size}"
 
+
+
     class Meta:
         verbose_name = 'Пункты заказа'
+
 
 class Payment(models.Model):
     class Meta:
@@ -143,26 +146,33 @@ class Payment(models.Model):
 
 @receiver(post_save, sender=OrderItem)
 def update_order_total(sender, instance, **kwargs):
-    """ Обновляет total_amount заказа при изменении товаров. """
+    """ Обновляет total_amount и total_cost заказа при изменении товаров. """
+    instance.order.calculate_total_cost()  # Вызываем расчет общей стоимости
     total_cost = instance.order.order_items.aggregate(total=Sum('cost_price'))['total'] or 0
     instance.order.total_amount = total_cost
     instance.order.save()
 
-@receiver(post_save, sender=Payment)
-def update_account_balance_on_create(sender, instance, created, **kwargs):
-    """ Обновляет баланс счета при создании оплаты. """
-    if created and instance.account:
-        with transaction.atomic():
-            instance.account.balance += instance.amount
-            instance.account.save()
 
-@receiver(pre_delete, sender=Payment)
-def update_account_balance_on_delete(sender, instance, **kwargs):
-    """ Обновляет баланс счета при удалении оплаты. """
-    if instance.account:
-        with transaction.atomic():
-            instance.account.balance -= instance.amount
-            instance.account.save()
+# @receiver(post_save, sender=Payment)
+# def update_account_balance_on_create(sender, instance, created, **kwargs):
+#     """ Обновляет баланс счета при создании оплаты. """
+#     if created and instance.account:
+#         with transaction.atomic():
+#             instance.account.balance += instance.amount
+#             instance.account.save()
+#
+
+
+# @receiver(pre_delete, sender=Payment)
+# def update_account_balance_on_delete(sender, instance, **kwargs):
+#     """ Обновляет баланс счета при удалении оплаты. """
+#     if instance.account:
+#         with transaction.atomic():
+#             instance.account.balance -= instance.amount
+#             instance.account.save()
+#
+
+
 
 @receiver(post_save, sender=Payment)
 def update_order_payment_status(sender, instance, created, **kwargs):
@@ -194,6 +204,15 @@ def update_order_payment_status(sender, instance, created, **kwargs):
 
         order.save()
 
+    AccountTransaction.objects.create(
+        account=instance.account,
+        payment_method=instance.payment_method,
+        amount=instance.amount,
+        operation_type='Оплата Заказа',
+        description='Оплачено',
+        direction='in',
+    )
+
 @receiver(pre_delete, sender=Payment)
 def update_order_payment_status_on_delete(sender, instance, **kwargs):
     """
@@ -215,3 +234,10 @@ def update_order_payment_status_on_delete(sender, instance, **kwargs):
             order.payment_status = 'not_paid'
 
         order.save()
+    AccountTransaction.objects.create(
+        account=instance.account,
+        payment_method=instance.payment_method,
+        amount=instance.amount,
+        operation_type='Оплата Заказа',
+        description='Запись удален',
+    )

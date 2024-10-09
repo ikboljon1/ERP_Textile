@@ -96,6 +96,8 @@ class OrderAdmin(admin.ModelAdmin):
         'uuid', 'customer', 'order_date', 'total_amount', 'total_paid',
         'remaining_amount', 'status', 'payment_status', 'create_assignment_button'
     )
+
+    list_display = ('uuid', 'customer', 'order_date', "total_cost",'total_amount', 'total_paid', 'remaining_amount', 'status', 'payment_status')
     list_filter = ('status', 'customer', 'order_date')
     inlines = [OrderItemInline, PaymentInline]
     readonly_fields = ('total_paid', 'remaining_amount')

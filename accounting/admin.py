@@ -12,11 +12,9 @@ from django.utils.timezone import now
 from manufactory.models import OperationLog
 from order.models import Order
 from .models import Account, Counterparty, Document, TransactionType, Expense, \
-    WriteOff, Purchase
+    WriteOff, Purchase, SalaryPayment, AccountTransaction, Advance, Bonus, Payroll
 from rangefilter.filter import DateRangeFilter
 from import_export.admin import ImportExportModelAdmin
-    WriteOff, Purchase, SalaryPayment, Payroll, Advance, Bonus, AccountTransaction
-
 
 @admin.register(TransactionType)
 class TransactionTypeAdmin(admin.ModelAdmin):
@@ -39,9 +37,9 @@ class TransactionTypeAdmin(admin.ModelAdmin):
 #         super().save_model(request, obj, form, change)
 @admin.register(AccountTransaction)
 class AccountTransactionAdmin(admin.ModelAdmin):
-    list_display = ('account', 'timestamp', 'operation_type', 'amount', 'quantity', 'description', 'direction','related_object')
-    list_filter = ('account', 'operation_type', 'timestamp', 'direction')
-    search_fields = ('account', 'timestamp', 'operation_type', 'amount', 'quantity', 'description', 'direction','related_object')
+    list_display = ('account', 'timestamp', 'operation_type', 'amount','payment_method','transaction_type', 'quantity', 'description', 'direction',)
+    list_filter = ('account', 'operation_type', 'timestamp', 'direction','transaction_type')
+    search_fields = ('account', 'timestamp', 'operation_type', 'amount', 'quantity', 'description', 'direction','related_object','payment_method','transaction_type',)
 
     def has_add_permission(self, request):
         return False

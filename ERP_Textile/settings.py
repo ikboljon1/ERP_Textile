@@ -35,8 +35,8 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
 
-    # 'admin_soft.apps.AdminSoftDashboardConfig',
-    'jazzmin',
+    'admin_soft.apps.AdminSoftDashboardConfig',
+    # 'jazzmin',
     'rangefilter',
     'import_export',
     'django.contrib.admin',
@@ -144,7 +144,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 AUTHENTICATION_BACKENDS = [
-    'HRM.backends.MyBackend',  # Путь к вашему backend
+    'HRM.backends.RFIDBackend',  # Путь к вашему backend
     'django.contrib.auth.backends.ModelBackend', # Оставьте ModelBackend для других типов аутентификации
 ]
 

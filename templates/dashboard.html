@@ -1,0 +1,31 @@
+{#{% extends 'admin/base.html' %} #}
+{#{% load dashboard_tags %} <! -- Подключаем наши template tags -->#}
+{##}
+{#{% block content %}#}
+{#<h1>Дашборд</h1>#}
+{##}
+{#<table>#}
+{#    <thead>#}
+{#        <tr>#}
+{#            <th>Этап</th>#}
+{#            <th>Всего задач</th>#}
+{#            <th>Выполнено</th>#}
+{#            <th>В процессе</th>#}
+{#            <th>Просрочено</th>#}
+{#            <th>Ср. время выполнения (дни)</th>#}
+{#        </tr>#}
+{#    </thead>#}
+{#    <tbody>#}
+{#    {% for stage_data in get_stage_data %} #}
+{#    <tr>#}
+{#        <td>{{ stage_data.stage.name }}</td>#}
+{#        <td>{{ stage_data.total_tasks }}</td>#}
+{#        <td>{{ stage_data.completed_tasks }}</td>#}
+{#        <td>{{ stage_data.in_progress_tasks }}</td>#}
+{#        <td>{{ stage_data.overdue_tasks }}</td>#}
+{#        <td>{{ stage_data.average_duration|default:"-" }}</td>#}
+{#    </tr>#}
+{#    {% endfor %}#}
+{#    </tbody>#}
+{#</table>#}
+{#{% endblock %}#}

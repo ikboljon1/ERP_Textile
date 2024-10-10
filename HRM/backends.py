@@ -1,21 +1,20 @@
 from django.contrib.auth.backends import BaseBackend
-from django.contrib.auth.models import User
-from .models import NfcTag
+from .models import Employee, NfcTag
 
-class MyBackend(BaseBackend):
-    def authenticate(self, request, token=None):
-        print('aaaa')
-        if token: #  Если токен передан (любой)
+class RFIDBackend(BaseBackend):
+    def authenticate(self, request, rfid_tag=None, **kwargs):
+        if rfid_tag is not None:
             try:
-                user = User.objects.get(username='lucky') #  Замените 'testuser' на имя вашего тестового пользователя
-                return user
-            except User.DoesNotExist:
-                return None # Или создайте тестового пользователя здесь, если его нет.
-        return None
+                nfc_tag = NfcTag.objects.get(uid=rfid_tag)
+                employee = nfc_tag.employee
 
+                if employee is not None:
+                    return employee
+            except (NfcTag.DoesNotExist, Employee.DoesNotExist):
+                return None
 
     def get_user(self, user_id):
         try:
-            return User.objects.get(pk=user_id)
-        except User.DoesNotExist:
+            return Employee.objects.get(pk=user_id)
+        except Employee.DoesNotExist:
             return None

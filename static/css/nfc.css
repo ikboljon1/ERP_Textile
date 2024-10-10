@@ -1,0 +1,7 @@
+#rfid-tag-input {
+  position: absolute;
+  left: -9999px;
+  top: -9999px;
+  /*  Или: */
+  clip: rect(0 0 0 0);
+}

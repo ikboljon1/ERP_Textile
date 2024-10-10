@@ -2,6 +2,15 @@
 <html>
 <head>
   <title>RFID Логин</title>
+    <style>
+    #rfid-tag-input {
+      position: absolute;
+      left: -9999px;
+      top: -9999px;
+      /*  Или: */
+      clip: rect(0 0 0 0); 
+    }
+  </style>
 </head>
 <body>
   <h2>RFID Логин</h2>
@@ -9,25 +18,12 @@
   <form method="post" id="rfid-form">
     {% csrf_token %}
     <input  name="rfid_tag" id="rfid-tag-input">
-    <button type="submit">Войти</button>
   </form>
 
   <script>
-    RFIDreader.on('tag', function(tagData) {
-    var rfidUid = tagData.uid;
-
-    // Вставляем UID в оба поля
-    document.getElementById('rfid-tag-input').value = rfidUid;
-    {#document.getElementById('hidden-focus-input').value = rfidUid; #}
-
-    // Отправляем форму
-    document.getElementById('rfid-form').submit();
-});
-
-window.onload = function() {
-    // Фокусируемся на невидимом поле
-    {#document.getElementById('hidden-focus-input').focus();#}
-};
+    window.onload = function() {
+    document.getElementById("rfid-tag-input").focus();
+  };
   </script>
 
 </body>

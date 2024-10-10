@@ -35,8 +35,8 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
 
-    'admin_soft.apps.AdminSoftDashboardConfig',
-    # 'jazzmin',
+    # 'admin_soft.apps.AdminSoftDashboardConfig',
+    'jazzmin',
     'rangefilter',
     'import_export',
     'django.contrib.admin',

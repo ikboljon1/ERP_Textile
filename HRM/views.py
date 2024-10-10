@@ -4,7 +4,6 @@ from django.contrib.auth import login
 from django.views.decorators.csrf import csrf_exempt  # Добавь это для CSRF-защиты
 
 #100% Рабочий
-@csrf_exempt  # Отключаем CSRF для простоты, но в реальном приложении лучше настроить CSRF-токены
 def login_view(request):
     if request.method == 'POST':
         rfid_tag = request.POST.get('rfid_tag')
